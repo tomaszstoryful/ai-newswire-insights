@@ -41,144 +41,166 @@ export const simulatePythonExecution = async (userQuery: string): Promise<{code:
   let result = '';
   
   if (lowercaseQuery.includes('trend') || lowercaseQuery.includes('top')) {
-    code = `import pandas as pd
-import matplotlib.pyplot as plt
-from collections import Counter
+    code = `import numpy as np
 
-# Load news data
-news_data = pd.read_csv('news_archive.csv')
+# Load news data (simplified sample)
+news_data = {
+    'topics': ['AI', 'Climate', 'Elections', 'Privacy', 'Space', 'AI', 'Climate', 
+              'Elections', 'AI', 'Climate', 'Elections', 'Elections'],
+    'engagement': [0.8, 0.6, 0.9, 0.7, 0.8, 0.7, 0.5, 0.8, 0.9, 0.6, 0.7, 0.9],
+    'dates': ['2025-04-10', '2025-04-11', '2025-04-12', '2025-04-13', '2025-04-14', 
+             '2025-04-12', '2025-04-13', '2025-04-14', '2025-04-10', '2025-04-13', 
+             '2025-04-10', '2025-04-11']
+}
 
-# Analyze trending topics
-def analyze_trends(data, top_n=3):
-    # Extract trending topics based on frequency and engagement
-    topics = Counter(data['topic'])
-    engagement = {topic: data[data['topic'] == topic]['engagement'].mean() 
-                 for topic in topics.keys()}
-    
-    # Calculate growth rate compared to previous period
-    growth = {
-        'AI Developments': 0.28,
-        'Climate Crisis': 0.12,
-        'Global Elections': 0.08,
-        'Digital Privacy': 0.32,
-        'Space Exploration': 0.18
-    }
-    
-    # Rank topics by a combined score of frequency and engagement
-    topic_score = {topic: (topics[topic] * 0.6) + (engagement.get(topic, 0) * 0.4) 
-                  for topic in topics.keys()}
-    
-    # Get top N topics
-    top_topics = sorted(topic_score.items(), key=lambda x: x[1], reverse=True)[:top_n]
-    
-    return [{
+# Convert to numpy arrays for faster processing
+topics = np.array(news_data['topics'])
+engagement = np.array(news_data['engagement'])
+
+# Find unique topics and count occurrences
+unique_topics, counts = np.unique(topics, return_counts=True)
+
+# Calculate average engagement per topic
+topic_engagement = {}
+for topic in unique_topics:
+    topic_indices = topics == topic
+    topic_engagement[topic] = np.mean(engagement[topic_indices])
+
+# Sort topics by count
+sorted_indices = np.argsort(counts)[::-1]
+top_topics = unique_topics[sorted_indices][:3]
+top_counts = counts[sorted_indices][:3]
+
+# Prepare results
+results = []
+for i, topic in enumerate(top_topics):
+    growth_rates = {'Elections': 0.08, 'Climate': 0.12, 'AI': 0.28, 'Privacy': 0.32, 'Space': 0.18}
+    eng_level = 'High' if topic_engagement[topic] > 0.7 else 'Medium'
+    results.append({
         'topic': topic,
-        'stories': topics[topic],
-        'growth': f"+{int(growth.get(topic, 0) * 100)}%",
-        'engagement': 'High' if engagement.get(topic, 0) > 0.7 else 'Medium'
-    } for topic, _ in top_topics]
+        'stories': int(top_counts[i]),
+        'growth': f"+{int(growth_rates.get(topic, 0) * 100)}%",
+        'engagement': eng_level
+    })
 
-# Execute the analysis
-top_trends = analyze_trends(news_data)
-print(f"Top {len(top_trends)} trending topics:")
-for i, trend in enumerate(top_trends, 1):
+print("Top 3 trending topics:")
+for i, trend in enumerate(results, 1):
     print(f"{i}. {trend['topic']}: {trend['stories']} stories, {trend['growth']} growth")
 
-# Find relevant stories for each trend
-top_stories = []
-for trend in top_trends:
-    trending_stories = data[data['topic'] == trend['topic']].sort_values(
-        by='engagement', ascending=False).head(3)
-    top_stories.extend(trending_stories['id'].tolist())
-
-print(f"\\nFound {len(top_stories)} relevant stories for these trends")`;
+# Calculate number of relevant stories
+total_relevant = np.sum(top_counts) * 3 // 10  # Approximately 30% of top topics
+print(f"\\nFound {total_relevant} relevant stories for these trends")`;
 
     result = `Top 3 trending topics:
-1. Global Elections: 201 stories, +8% growth
-2. Climate Crisis: 187 stories, +12% growth
-3. AI Developments: 134 stories, +28% growth
+1. Elections: 4 stories, +8% growth
+2. Climate: 3 stories, +12% growth
+3. AI: 3 stories, +28% growth
 
-Found 9 relevant stories for these trends
+Found 3 relevant stories for these trends
 
-These results show that while Global Elections has the most stories, AI Developments is growing at the fastest rate. I'll retrieve the most relevant stories for these trending topics.`;
+These results show that while Elections has the most stories, AI is growing at the fastest rate. I'll retrieve the most relevant stories for these trending topics.`;
   } 
   else if (lowercaseQuery.includes('region') || lowercaseQuery.includes('geographic')) {
-    code = `import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
+    code = `import numpy as np
 
-# Load news data
-news_data = pd.read_csv('news_archive.csv')
+# Load news data (simplified sample)
+regions = ['North America', 'Europe', 'Asia', 'North America', 'Europe', 
+           'Asia', 'Africa', 'South America', 'North America', 'Europe', 
+           'Australia/Oceania', 'North America', 'Asia', 'South America']
+engagement = [0.8, 0.7, 0.6, 0.9, 0.8, 0.7, 0.6, 0.5, 0.8, 0.7, 0.5, 0.8, 0.6, 0.5]
 
-# Analyze regions
-regions = news_data['region'].value_counts()
+# Convert to numpy arrays
+regions_array = np.array(regions)
+engagement_array = np.array(engagement)
 
-# Calculate engagement by region
-engagement_by_region = news_data.groupby('region')['engagement'].mean().sort_values(ascending=False)
+# Get unique regions and count stories
+unique_regions, counts = np.unique(regions_array, return_counts=True)
+
+# Calculate average engagement by region
+region_engagement = {}
+for region in unique_regions:
+    indices = regions_array == region
+    region_engagement[region] = np.mean(engagement_array[indices])
+
+# Sort regions by count and print results
+sorted_indices = np.argsort(counts)[::-1]
+sorted_regions = unique_regions[sorted_indices]
+sorted_counts = counts[sorted_indices]
 
 print("News stories by region:")
-for region, count in regions.items():
+for region, count in zip(sorted_regions, sorted_counts):
     print(f"{region}: {count} stories")
 
 print("\\nRegions by engagement level:")
-for region, engagement in engagement_by_region.items():
-    engagement_level = "High" if engagement > 0.7 else "Medium" if engagement > 0.4 else "Low"
-    print(f"{region}: {engagement_level} engagement ({engagement:.2f})")`;
+for region in sorted_regions:
+    eng = region_engagement[region]
+    eng_level = "High" if eng > 0.7 else "Medium" if eng > 0.4 else "Low"
+    print(f"{region}: {eng_level} engagement ({eng:.2f})")`;
 
     result = `News stories by region:
-North America: 423 stories
-Europe: 356 stories
-Asia: 289 stories
-South America: 156 stories
-Africa: 134 stories
-Australia/Oceania: 89 stories
+North America: 4 stories
+Europe: 3 stories
+Asia: 3 stories
+South America: 2 stories
+Africa: 1 stories
+Australia/Oceania: 1 stories
 
 Regions by engagement level:
-North America: High engagement (0.82)
-Europe: High engagement (0.76)
-Asia: Medium engagement (0.65)
-Africa: Medium engagement (0.58)
-South America: Medium engagement (0.52)
-Australia/Oceania: Medium engagement (0.47)
+North America: High engagement (0.83)
+Europe: High engagement (0.73)
+Asia: Medium engagement (0.63)
+South America: Medium engagement (0.50)
+Africa: Medium engagement (0.60)
+Australia/Oceania: Medium engagement (0.50)
 
 The analysis shows that North America and Europe lead both in story count and engagement levels. This suggests these regions receive more comprehensive coverage and audience interest.`;
   } 
   else {
-    code = `import pandas as pd
-import numpy as np
+    code = `import numpy as np
 from datetime import datetime, timedelta
 
-# Load news data
-news_data = pd.read_csv('news_archive.csv')
+# Sample news data for the last 7 days
+categories = ['Politics', 'Technology', 'Politics', 'Economy', 'Economy', 
+              'Technology', 'Technology', 'Health', 'Politics', 'Entertainment',
+              'Climate', 'Sports', 'Politics', 'Technology', 'Economy']
+engagement = [0.7, 0.8, 0.6, 0.5, 0.6, 0.7, 0.9, 0.6, 0.7, 0.8, 0.5, 0.6, 0.7, 0.8, 0.5]
+dates = np.array(['2025-04-10', '2025-04-11', '2025-04-11', '2025-04-12', 
+                 '2025-04-12', '2025-04-13', '2025-04-13', '2025-04-14', 
+                 '2025-04-14', '2025-04-15', '2025-04-15', '2025-04-15', 
+                 '2025-04-16', '2025-04-16', '2025-04-16'])
 
-# Filter to recent news (last 7 days)
-now = datetime.now()
-week_ago = now - timedelta(days=7)
-recent_news = news_data[pd.to_datetime(news_data['published_date']) > week_ago]
+# Convert to numpy arrays
+categories_array = np.array(categories)
+engagement_array = np.array(engagement)
 
-# Calculate basic statistics
-total_stories = len(recent_news)
-avg_engagement = recent_news['engagement'].mean()
-top_categories = recent_news['category'].value_counts().head(3)
+# Basic statistics
+total_stories = len(categories)
+avg_engagement = np.mean(engagement_array)
+
+# Top categories
+unique_categories, counts = np.unique(categories_array, return_counts=True)
+sorted_indices = np.argsort(counts)[::-1]
+top_categories = unique_categories[sorted_indices][:3]
+top_counts = counts[sorted_indices][:3]
 
 print(f"News statistics for the past 7 days:")
 print(f"Total stories published: {total_stories}")
 print(f"Average engagement score: {avg_engagement:.2f}")
 print("\\nTop 3 categories by story count:")
-for category, count in top_categories.items():
+for category, count in zip(top_categories, top_counts):
     percentage = (count / total_stories) * 100
     print(f"{category}: {count} stories ({percentage:.1f}% of total)")`;
 
     result = `News statistics for the past 7 days:
-Total stories published: 1447
-Average engagement score: 0.64
+Total stories published: 15
+Average engagement score: 0.67
 
 Top 3 categories by story count:
-Politics: 321 stories (22.2% of total)
-Technology: 312 stories (21.6% of total)
-Economy: 256 stories (17.7% of total)
+Politics: 4 stories (26.7% of total)
+Technology: 4 stories (26.7% of total)
+Economy: 3 stories (20.0% of total)
 
-This analysis shows a high volume of political and technology news in the past week, with economy stories also featured prominently. The average engagement score of 0.64 indicates moderate-to-high audience interest across all news stories.`;
+This analysis shows a high volume of political and technology news in the past week, with economy stories also featured prominently. The average engagement score of 0.67 indicates moderate-to-high audience interest across all news stories.`;
   }
   
   return { code, result };

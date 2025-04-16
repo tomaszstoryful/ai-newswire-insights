@@ -1,4 +1,3 @@
-
 export interface NewsStory {
   id: number;
   title: string;
@@ -41,6 +40,8 @@ export interface AIMessage {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
+  pythonCode?: string;  // Added to store Python code separately
+  hasPythonCode?: boolean; // Flag to indicate Python code is present
 }
 
 export interface AIConversation {

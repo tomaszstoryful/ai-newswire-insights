@@ -1,5 +1,6 @@
+
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Bot, MessageSquare, Code, ChevronRight, ChevronLeft } from 'lucide-react';
+import { X, Bot, MessageSquare, Code, ChevronRight, ChevronLeft, ChevronDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,7 +9,7 @@ import { useAIChat } from '@/hooks/useAIChat';
 import { formatDate } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import NewsCard from '@/components/news/NewsCard';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface AINewsModalProps {
   open: boolean;
@@ -135,22 +136,25 @@ const AINewsModal: React.FC<AINewsModalProps> = ({ open, onClose, initialMessage
                             : 'bg-newswire-lightGray rounded-tl-xl rounded-tr-xl rounded-br-xl p-3 shadow-sm'
                         }`}
                       >
-                        {message.role === 'assistant' && message.content.includes('```python') ? (
+                        {message.role === 'assistant' && message.pythonCode ? (
                           <>
                             <MessageContent 
-                              content={message.content.split('```python')[0]} 
+                              content={message.content} 
                               type="text" 
                             />
-                            <MessageContent 
-                              content={message.content.split('```python')[1].split('```')[0]} 
-                              type="code" 
-                            />
-                            {message.content.split('```')[2] && (
-                              <MessageContent 
-                                content={message.content.split('```')[2]} 
-                                type="text" 
-                              />
-                            )}
+                            
+                            <Collapsible className="mt-3">
+                              <CollapsibleTrigger className="flex items-center text-xs text-newswire-accent hover:underline cursor-pointer">
+                                <ChevronDown size={14} className="mr-1 transition-transform duration-200" />
+                                View Python code analysis
+                              </CollapsibleTrigger>
+                              <CollapsibleContent className="mt-2">
+                                <MessageContent 
+                                  content={message.pythonCode} 
+                                  type="code" 
+                                />
+                              </CollapsibleContent>
+                            </Collapsible>
                           </>
                         ) : (
                           <MessageContent content={message.content} type="text" />

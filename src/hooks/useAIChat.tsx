@@ -135,6 +135,7 @@ export const useAIChat = (initialMessage: string = '') => {
         role: 'assistant',
         content: responseContent,
         timestamp: new Date(),
+        hasPythonCode: true,  // Flag to indicate that this message has Python code (for collapsible UI)
       };
       
       setMessages(prev => [...prev, initialResponse]);
@@ -145,12 +146,13 @@ export const useAIChat = (initialMessage: string = '') => {
       // Execute simulated Python code
       const pythonResult = await simulatePythonExecution(userMessage);
       
-      // Update message with Python code result
-      const updatedContent = responseContent + `\n\n\`\`\`python\n${pythonResult.code}\n\`\`\`\n\nExecuting the code...\n\n${pythonResult.result}`;
+      // Update message with Python code result - but now the Python part will be hidden by default
+      const updatedContent = responseContent + `\n\n[Python Analysis Results]\n\n${pythonResult.result}`;
       
       const updatedMessage = {
         ...initialResponse,
-        content: updatedContent
+        content: updatedContent,
+        pythonCode: pythonResult.code // Store Python code separately for collapsible section
       };
       
       setMessages(prev => prev.map(msg => 
