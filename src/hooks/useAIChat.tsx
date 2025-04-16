@@ -107,7 +107,7 @@ export const useAIChat = (initialMessage: string = '') => {
         
         setMessages(prev => [...prev, newsMessage]);
         
-        // Store these stories with the current message index
+        // Store these stories with the message id
         setNewsResults(prev => [
           ...prev,
           ...newsStories.map(story => ({
@@ -115,6 +115,18 @@ export const useAIChat = (initialMessage: string = '') => {
             messageIndex: messages.length + 1 // +1 because we've already added the Python results message
           }))
         ]);
+        
+        // Force a rerender by updating the news message slightly after adding to newsResults
+        setTimeout(() => {
+          setMessages(prevMessages => {
+            return prevMessages.map(msg => {
+              if (msg.id === newsMessage.id) {
+                return { ...msg, content: msg.content }; // This creates a new object reference
+              }
+              return msg;
+            });
+          });
+        }, 100);
       }
     } else {
       // Simple response for queries that don't need Python analysis
@@ -167,7 +179,7 @@ export const useAIChat = (initialMessage: string = '') => {
         
         setMessages(prev => [...prev, newsMessage]);
         
-        // Store these stories with the new message index
+        // Store these stories with the new message id
         setNewsResults(prev => [
           ...prev,
           ...newsStories.map(story => ({
@@ -175,6 +187,18 @@ export const useAIChat = (initialMessage: string = '') => {
             messageIndex: messages.length + 1 // +1 because we've already added the first response
           }))
         ]);
+        
+        // Force a rerender by updating the news message slightly after adding to newsResults
+        setTimeout(() => {
+          setMessages(prevMessages => {
+            return prevMessages.map(msg => {
+              if (msg.id === newsMessage.id) {
+                return { ...msg, content: msg.content }; // This creates a new object reference
+              }
+              return msg;
+            });
+          });
+        }, 100);
       }
     }
     

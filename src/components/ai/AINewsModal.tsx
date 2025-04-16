@@ -88,84 +88,9 @@ const AINewsModal: React.FC<AINewsModalProps> = ({ open, onClose, initialMessage
     return <p className="whitespace-pre-wrap">{content}</p>;
   };
 
-  // Function to render news stories for a message
-  const renderNewsStories = (messageIndex: number) => {
-    // Find news stories that correspond to this message index
-    const relatedNewsResults = newsResults.filter(
-      story => story.messageIndex === messageIndex
-    );
-    
-    if (relatedNewsResults.length === 0) return null;
-    
-    return (
-      <div className="mt-4 w-full animate-in fade-in-50 slide-in-from-bottom-3 duration-300 news-card-animate">
-        <div className="relative">
-          {relatedNewsResults.length > 1 && (
-            <button 
-              onClick={scrollLeft}
-              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/80 hover:bg-white rounded-full p-1 shadow-md transition-all"
-              aria-label="Scroll left"
-            >
-              <ChevronLeft size={20} />
-            </button>
-          )}
-          
-          <div 
-            ref={scrollContainerRef}
-            className="flex overflow-x-auto gap-4 py-2 px-6 hide-scrollbar"
-            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-          >
-            {relatedNewsResults.map((story, i) => (
-              <Link 
-                key={`story-${story.id}-${i}`}
-                to={`/story/${story.slug}`}
-                onClick={handleNewsCardClick}
-                className="flex-shrink-0 w-[280px] bg-white rounded-lg shadow-md border border-newswire-lightGray overflow-hidden hover:shadow-lg transition-all duration-200 hover:scale-[1.02] news-card-animate"
-                style={{ animationDelay: `${i * 150}ms` }}
-              >
-                <div className="h-36 bg-newswire-lightGray overflow-hidden">
-                  {story.lead_image && (
-                    <img 
-                      src={story.lead_image.url}
-                      alt={story.title}
-                      className="w-full h-full object-cover"
-                    />
-                  )}
-                </div>
-                <div className="p-3">
-                  <h4 className="font-medium text-sm line-clamp-2 mb-1">
-                    {story.title}
-                  </h4>
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-newswire-mediumGray">
-                      {formatDate(story.published_date)}
-                    </span>
-                    {story.clearance_mark && (
-                      <Badge 
-                        variant="outline" 
-                        className="text-[9px] h-4 px-1.5 border-newswire-accent text-newswire-accent"
-                      >
-                        {story.clearance_mark}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-          
-          {relatedNewsResults.length > 1 && (
-            <button 
-              onClick={scrollRight}
-              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/80 hover:bg-white rounded-full p-1 shadow-md transition-all"
-              aria-label="Scroll right"
-            >
-              <ChevronRight size={20} />
-            </button>
-          )}
-        </div>
-      </div>
-    );
+  // Function to find news stories for a specific message index
+  const findNewsResults = (messageIndex: number) => {
+    return newsResults.filter(story => story.messageIndex === messageIndex);
   };
 
   return (
@@ -204,50 +129,130 @@ const AINewsModal: React.FC<AINewsModalProps> = ({ open, onClose, initialMessage
             <ScrollArea className="h-[calc(100vh-8rem)] px-4 py-4">
               <div className="space-y-6 max-w-5xl mx-auto pb-4">
                 {messages.map((message, index) => (
-                  <div 
-                    key={message.id} 
-                    className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in-50 slide-in-from-bottom-3 duration-300`}
-                    style={{ animationDelay: `${index * 50}ms` }}
-                  >
+                  <React.Fragment key={message.id}>
                     <div 
-                      className={`max-w-[85%] ${
-                        message.role === 'user' 
-                          ? 'bg-newswire-accent text-white rounded-tl-xl rounded-tr-xl rounded-bl-xl p-3 shadow-sm'
-                          : 'bg-newswire-lightGray rounded-tl-xl rounded-tr-xl rounded-br-xl p-3 shadow-sm'
-                      }`}
+                      className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in-50 slide-in-from-bottom-3 duration-300`}
+                      style={{ animationDelay: `${index * 50}ms` }}
                     >
-                      {message.role === 'assistant' && message.content.includes('```python') ? (
-                        <>
-                          <MessageContent 
-                            content={message.content.split('```python')[0]} 
-                            type="text" 
-                          />
-                          <MessageContent 
-                            content={message.content.split('```python')[1].split('```')[0]} 
-                            type="code" 
-                          />
-                          {message.content.split('```')[2] && (
+                      <div 
+                        className={`max-w-[85%] ${
+                          message.role === 'user' 
+                            ? 'bg-newswire-accent text-white rounded-tl-xl rounded-tr-xl rounded-bl-xl p-3 shadow-sm'
+                            : 'bg-newswire-lightGray rounded-tl-xl rounded-tr-xl rounded-br-xl p-3 shadow-sm'
+                        }`}
+                      >
+                        {message.role === 'assistant' && message.content.includes('```python') ? (
+                          <>
                             <MessageContent 
-                              content={message.content.split('```')[2]} 
+                              content={message.content.split('```python')[0]} 
                               type="text" 
                             />
-                          )}
-                        </>
-                      ) : (
-                        <MessageContent content={message.content} type="text" />
-                      )}
+                            <MessageContent 
+                              content={message.content.split('```python')[1].split('```')[0]} 
+                              type="code" 
+                            />
+                            {message.content.split('```')[2] && (
+                              <MessageContent 
+                                content={message.content.split('```')[2]} 
+                                type="text" 
+                              />
+                            )}
+                          </>
+                        ) : (
+                          <MessageContent content={message.content} type="text" />
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
-                
-                {/* News results are now rendered directly after each relevant message */}
-                {messages.map((message, index) => (
-                  message.role === 'assistant' && 
-                  message.content.includes('Here are some relevant news stories I found') && (
-                    <div key={`news-${index}`} className="flex justify-start w-full">
-                      {renderNewsStories(index)}
-                    </div>
-                  )
+                    
+                    {/* Render news stories right after the message that references them */}
+                    {message.role === 'assistant' && 
+                     message.content.includes('Here are some relevant news stories I found') && (
+                      <div className="flex justify-start w-full mt-4">
+                        {(() => {
+                          const relatedNewsResults = findNewsResults(index);
+                          
+                          if (relatedNewsResults.length === 0) {
+                            // If no news stories are found for this message, show a placeholder
+                            return (
+                              <div className="max-w-[85%] bg-newswire-lightGray rounded-xl p-3 shadow-sm">
+                                <p className="text-sm italic text-newswire-mediumGray">Loading news stories...</p>
+                              </div>
+                            );
+                          }
+                          
+                          return (
+                            <div className="w-full animate-in fade-in-50 slide-in-from-bottom-3 duration-300 news-card-animate">
+                              <div className="relative">
+                                {relatedNewsResults.length > 1 && (
+                                  <button 
+                                    onClick={scrollLeft}
+                                    className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/80 hover:bg-white rounded-full p-1 shadow-md transition-all"
+                                    aria-label="Scroll left"
+                                  >
+                                    <ChevronLeft size={20} />
+                                  </button>
+                                )}
+                                
+                                <div 
+                                  ref={scrollContainerRef}
+                                  className="flex overflow-x-auto gap-4 py-2 px-6 hide-scrollbar"
+                                  style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                                >
+                                  {relatedNewsResults.map((story, i) => (
+                                    <Link 
+                                      key={`story-${story.id}-${i}`}
+                                      to={`/story/${story.slug}`}
+                                      onClick={handleNewsCardClick}
+                                      className="flex-shrink-0 w-[280px] bg-white rounded-lg shadow-md border border-newswire-lightGray overflow-hidden hover:shadow-lg transition-all duration-200 hover:scale-[1.02] news-card-animate"
+                                      style={{ animationDelay: `${i * 150}ms` }}
+                                    >
+                                      <div className="h-36 bg-newswire-lightGray overflow-hidden">
+                                        {story.lead_image && (
+                                          <img 
+                                            src={story.lead_image.url}
+                                            alt={story.title}
+                                            className="w-full h-full object-cover"
+                                          />
+                                        )}
+                                      </div>
+                                      <div className="p-3">
+                                        <h4 className="font-medium text-sm line-clamp-2 mb-1">
+                                          {story.title}
+                                        </h4>
+                                        <div className="flex justify-between items-center">
+                                          <span className="text-xs text-newswire-mediumGray">
+                                            {formatDate(story.published_date)}
+                                          </span>
+                                          {story.clearance_mark && (
+                                            <Badge 
+                                              variant="outline" 
+                                              className="text-[9px] h-4 px-1.5 border-newswire-accent text-newswire-accent"
+                                            >
+                                              {story.clearance_mark}
+                                            </Badge>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </Link>
+                                  ))}
+                                </div>
+                                
+                                {relatedNewsResults.length > 1 && (
+                                  <button 
+                                    onClick={scrollRight}
+                                    className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/80 hover:bg-white rounded-full p-1 shadow-md transition-all"
+                                    aria-label="Scroll right"
+                                  >
+                                    <ChevronRight size={20} />
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    )}
+                  </React.Fragment>
                 ))}
                 
                 {isGenerating && (
