@@ -50,7 +50,9 @@ export const useAIChat = (initialMessage: string = '') => {
       const needsNewsResults = content.toLowerCase().includes('trending') ||
                              content.toLowerCase().includes('top stories') ||
                              content.toLowerCase().includes('popular news') ||
-                             content.toLowerCase().includes('latest headlines');
+                             content.toLowerCase().includes('latest headlines') ||
+                             content.toLowerCase().includes('news') ||
+                             content.toLowerCase().includes('stories');
       
       processAIResponse(content, needsPythonAnalysis, needsNewsResults);
     }, 500);
@@ -78,16 +80,8 @@ export const useAIChat = (initialMessage: string = '') => {
       // Execute simulated Python code
       const pythonResult = await simulatePythonExecution(userMessage);
       
-      const updatedMessage = {
-        ...initialResponse,
-        content: responseContent + `\n\n\`\`\`python\n${pythonResult.code}\n\`\`\`\n\nExecuting the code...\n\n${pythonResult.result}`
-      };
-      
-      setMessages(prev => prev.map(msg => 
-        msg.id === initialResponse.id ? updatedMessage : msg
-      ));
-      
-      // If news results are needed, fetch and add them
+      // If news results are needed, fetch them
+      let newsStoriesMessage = '';
       if (needsNewsResults) {
         // Fetch news stories
         const newsStories = await simulateNewsSearch(userMessage);
@@ -98,7 +92,18 @@ export const useAIChat = (initialMessage: string = '') => {
           ...story,
           messageIndex: currentMessageIndex // This will associate with the AI response message
         })));
+        
+        newsStoriesMessage = '\n\nHere are some relevant news stories I found:';
       }
+      
+      const updatedMessage = {
+        ...initialResponse,
+        content: responseContent + `\n\n\`\`\`python\n${pythonResult.code}\n\`\`\`\n\nExecuting the code...\n\n${pythonResult.result}${newsStoriesMessage}`
+      };
+      
+      setMessages(prev => prev.map(msg => 
+        msg.id === initialResponse.id ? updatedMessage : msg
+      ));
     } else {
       // Simple response for queries that don't need Python analysis
       responseContent = `Based on the news data in our system, ${
@@ -135,6 +140,28 @@ export const useAIChat = (initialMessage: string = '') => {
         
         // Pause between words to simulate streaming
         await new Promise(resolve => setTimeout(resolve, 50));
+      }
+      
+      // For simple requests, also check if news results are needed
+      if (needsNewsResults) {
+        // Fetch news stories after a brief delay
+        await new Promise(resolve => setTimeout(resolve, 500));
+        const newsStories = await simulateNewsSearch(userMessage);
+        
+        // Store these stories with the current message index
+        const currentMessageIndex = messages.length;
+        setNewsResults(newsStories.map(story => ({
+          ...story,
+          messageIndex: currentMessageIndex 
+        })));
+        
+        // Update the message to indicate news stories
+        const newsStoriesMessage = '\n\nHere are some relevant news stories I found:';
+        const updatedContent = aiResponse.content + newsStoriesMessage;
+        
+        setMessages(prev => prev.map(msg => 
+          msg.id === aiResponse.id ? {...msg, content: updatedContent} : msg
+        ));
       }
     }
     
