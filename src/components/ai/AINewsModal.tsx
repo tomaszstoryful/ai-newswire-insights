@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Bot, MessageSquare, Code, ChevronRight, ChevronLeft } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -28,7 +27,6 @@ const AINewsModal: React.FC<AINewsModalProps> = ({ open, onClose, initialMessage
   const [inputValue, setInputValue] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
-  // Scroll to the bottom whenever messages change
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -43,7 +41,6 @@ const AINewsModal: React.FC<AINewsModalProps> = ({ open, onClose, initialMessage
     }
   };
 
-  // For scrolling news results
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   
   const scrollLeft = () => {
@@ -58,7 +55,6 @@ const AINewsModal: React.FC<AINewsModalProps> = ({ open, onClose, initialMessage
     }
   };
 
-  // Close when user clicks on news story
   const handleNewsCardClick = () => {
     onClose();
   };
@@ -89,7 +85,6 @@ const AINewsModal: React.FC<AINewsModalProps> = ({ open, onClose, initialMessage
     return <p className="whitespace-pre-wrap">{content}</p>;
   };
 
-  // Function to find news stories for a specific message ID
   const findNewsResults = (messageId: string) => {
     return newsResults.filter(story => story.messageId === messageId);
   };
@@ -113,7 +108,6 @@ const AINewsModal: React.FC<AINewsModalProps> = ({ open, onClose, initialMessage
           Chat with the Newswire AI Assistant to analyze news data and find stories
         </DialogDescription>
         <div className="flex flex-col h-full bg-white">
-          {/* Header */}
           <div className="border-b border-newswire-lightGray p-4 flex justify-between items-center bg-gradient-to-r from-newswire-accent/20 to-transparent sticky top-0 z-10">
             <div className="flex items-center">
               <Bot size={20} className="text-newswire-accent mr-2" />
@@ -125,7 +119,6 @@ const AINewsModal: React.FC<AINewsModalProps> = ({ open, onClose, initialMessage
             </Button>
           </div>
           
-          {/* Chat Area - Using ScrollArea for better scrolling behavior */}
           <div className="flex-grow overflow-hidden">
             <ScrollArea className="h-[calc(100vh-8rem)] px-4 py-4">
               <div className="space-y-6 max-w-5xl mx-auto pb-4">
@@ -165,16 +158,13 @@ const AINewsModal: React.FC<AINewsModalProps> = ({ open, onClose, initialMessage
                       </div>
                     </div>
                     
-                    {/* Render news stories right after the message that references them */}
                     {message.role === 'assistant' && 
                      message.content.includes('Here are some relevant news stories I found') && (
                       <div className="flex justify-start w-full mt-4">
                         {(() => {
-                          // Get news results for this specific message ID
                           const relatedNewsResults = findNewsResults(message.id);
                           
                           if (relatedNewsResults.length === 0) {
-                            // If no news stories are found for this message, add dummy data from existing stories
                             return (
                               <div className="max-w-[85%] bg-newswire-lightGray rounded-xl p-3 shadow-sm">
                                 <p className="text-sm italic text-newswire-mediumGray">Loading news stories...</p>
@@ -272,7 +262,6 @@ const AINewsModal: React.FC<AINewsModalProps> = ({ open, onClose, initialMessage
             </ScrollArea>
           </div>
           
-          {/* Input Area */}
           <div className="border-t border-newswire-lightGray p-4 bg-white sticky bottom-0 z-10">
             <form onSubmit={handleSubmit} className="flex gap-2 max-w-5xl mx-auto">
               <Input

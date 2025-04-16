@@ -8,6 +8,70 @@ interface NewsResult extends NewsStory {
   messageId: string; // Changed from messageIndex to messageId for direct linking
 }
 
+// Dummy data for news stories
+const dummyNewsStories: NewsStory[] = [
+  {
+    "updated_at": "2025-04-16T06:30:05Z",
+    "lead_image": {
+      "url": "https://storyful.s3.amazonaws.com/production/stories/322510/original.gif",
+      "filename": "original.gif"
+    },
+    "lead_item": {
+      "id": 4415051,
+      "media_button": {
+        "first_time": true,
+        "already_downloaded_by_relative": false,
+        "action": "/stories/322510/media/4415051/download?exclude_from_home_page=true&format=json&page=1"
+      },
+      "resource_type": "video",
+      "type": "ItemYoutube"
+    },
+    "in_trending_collection": false,
+    "editorial_updated_at": "2025-04-16T06:30:05Z",
+    "collection_headline": "13/04/2025",
+    "collection_summary_html": "",
+    "id": 322510,
+    "title": "Stranded Dog Rescued From Rooftop After Escaping Through Attic Window",
+    "slug": "US-CT",
+    "published_date": "2025-04-15T20:59:23Z",
+    "clearance_mark": "LICENSED",
+    "video_providing_partner": false,
+    "summary": "Firefighters in Hartford, Connecticut, rescued a dog from the roof of a 2.5-story home on April 13, according to local media, citing officials.\n\nOfficials said the dog escaped through an open attic window and jumped onto the main roof of the home, located on the 200 block of New Park Avenue.\n\nVideo filmed by Kari L Bramhall shows firefighters using a ladder truck to safely retrieve the dog around 3:45 pm on Sunday.\n\nThe dog was not injured, did not fall, and was brought down safely, reports say.\n\n\"Based on his bravery, climbing, and comfort being on that roof, I may have to offer this puppy a job,\" joked Hartford Fire Department District Chief Mario Oquendo Jr.",
+    "place_id": "ChIJOThsZkohTIYRhvmYx7ZKWeY",
+    "regions": ["North America"]
+  },
+  {
+    "updated_at": "2025-04-16T06:29:57Z",
+    "lead_image": {
+      "url": "https://storyful.s3.amazonaws.com/production/stories/322529/original.gif",
+      "filename": "original.gif"
+    },
+    "lead_item": {
+      "id": 4415228,
+      "media_button": {
+        "first_time": true,
+        "already_downloaded_by_relative": false,
+        "action": "/stories/322529/media/4415228/download?exclude_from_home_page=true&format=json&page=1"
+      },
+      "resource_type": "video",
+      "type": "ItemEmbed"
+    },
+    "in_trending_collection": false,
+    "editorial_updated_at": "2025-04-16T06:29:57Z",
+    "collection_headline": "April 10 2025",
+    "collection_summary_html": "",
+    "id": 322529,
+    "title": "Karaoke Singer Unwittingly Performs Hit Blink-182 Song in Front of Band Member",
+    "slug": "US-CA",
+    "published_date": "2025-04-16T05:32:27Z",
+    "clearance_mark": "RESTRICTED",
+    "video_providing_partner": false,
+    "summary": "Blink-182 vocalist and guitarist Tom DeLonge was \"watching, waiting, commiserating\" when a karaoke singer belted out the band's biggest hit in a bar in Indio, California.\n\nThis video shows Monica Polish, (@monicasienkiewicz on TikTok), performing the 1999 song All The Small Things in Neil's Lounge with gusto and to the delight of her friends - blissfully unaware the artist was in the audience.\n\nThe camera then pans to DeLonge who is sitting and watching Polish's rendition.\n\nKyle Goldstein, who goes by @‌WebsiteLandlord on TikTok and recorded the video, told Storyful: \"I saw a girl singing Blink-182 Karaoke at a bar and she had no idea Tom DeLonge was sitting right there.\"\n\nPolish later spoke to DeLonge in the audience, according to further social media posts.",
+    "place_id": "ChIJhdffQzX02oARMVAjp83nbBY",
+    "regions": ["North America"]
+  }
+];
+
 export const useAIChat = (initialMessage: string = '') => {
   const [messages, setMessages] = useState<AIMessage[]>([
     {
@@ -105,32 +169,14 @@ export const useAIChat = (initialMessage: string = '') => {
         
         setMessages(prev => [...prev, newsMessage]);
         
-        // Get actual trending stories instead of simulated ones
-        try {
-          // First try to get stories from news search
-          const newsStories = await simulateNewsSearch(userMessage);
-          
-          // Add these stories with the message id
-          setNewsResults(prev => [
-            ...prev,
-            ...newsStories.map(story => ({
-              ...story,
-              messageId: newsMessage.id 
-            }))
-          ]);
-        } catch (error) {
-          // Fallback to trending stories if search fails
-          const trendingStories = await getTrendingStories();
-          
-          // Add these stories with the message id
-          setNewsResults(prev => [
-            ...prev,
-            ...trendingStories.map(story => ({
-              ...story,
-              messageId: newsMessage.id
-            }))
-          ]);
-        }
+        // Use dummy stories instead of fetching
+        const dummyNewsResults = dummyNewsStories.map(story => ({
+          ...story,
+          messageId: newsMessage.id
+        }));
+        
+        // Add these stories with the message id
+        setNewsResults(prev => [...prev, ...dummyNewsResults]);
       }
     } else {
       // Simple response for queries that don't need Python analysis
@@ -180,32 +226,14 @@ export const useAIChat = (initialMessage: string = '') => {
         
         setMessages(prev => [...prev, newsMessage]);
         
-        // Get actual trending stories instead of simulated ones
-        try {
-          // First try to get stories from news search
-          const newsStories = await simulateNewsSearch(userMessage);
-          
-          // Add these stories with the message id
-          setNewsResults(prev => [
-            ...prev,
-            ...newsStories.map(story => ({
-              ...story,
-              messageId: newsMessage.id
-            }))
-          ]);
-        } catch (error) {
-          // Fallback to trending stories if search fails
-          const trendingStories = await getTrendingStories();
-          
-          // Add these stories with the message id
-          setNewsResults(prev => [
-            ...prev,
-            ...trendingStories.map(story => ({
-              ...story,
-              messageId: newsMessage.id
-            }))
-          ]);
-        }
+        // Use dummy stories directly
+        const dummyNewsResults = dummyNewsStories.map(story => ({
+          ...story,
+          messageId: newsMessage.id
+        }));
+        
+        // Add these stories with the message id
+        setNewsResults(prev => [...prev, ...dummyNewsResults]);
       }
     }
     
