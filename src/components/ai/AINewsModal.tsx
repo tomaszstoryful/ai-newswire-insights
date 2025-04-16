@@ -91,7 +91,7 @@ const AINewsModal: React.FC<AINewsModalProps> = ({ open, onClose, initialMessage
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent 
-        className="w-full h-full max-w-none p-0 m-0 border-none rounded-none animate-in zoom-in-90 duration-300"
+        className="w-full h-full max-w-none p-0 m-0 border-none rounded-none modal-zoom-in"
         style={{ 
           position: 'fixed', 
           top: 0, 

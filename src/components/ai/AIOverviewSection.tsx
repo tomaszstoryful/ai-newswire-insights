@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Bot, MessageSquare, Send, Link, ExternalLink, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -17,7 +16,6 @@ const AIOverviewSection: React.FC<AIOverviewSectionProps> = ({ story, isStoryDet
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [initialModalMessage, setInitialModalMessage] = useState('');
 
-  // Sample trending news data for homepage
   const trendingTopics = [
     { id: 1, title: "Climate Crisis", count: 43, change: "+12%" },
     { id: 2, title: "Tech Innovations", count: 38, change: "+8%" },
@@ -30,7 +28,6 @@ const AIOverviewSection: React.FC<AIOverviewSectionProps> = ({ story, isStoryDet
     { id: 3, title: "Technological Breakthroughs", link: "/category/technology" },
   ];
 
-  // Story-specific data for story detail page
   const getStoryContext = () => {
     if (story.title.includes("Dog Rescued")) {
       return {
@@ -43,7 +40,6 @@ const AIOverviewSection: React.FC<AIOverviewSectionProps> = ({ story, isStoryDet
         locationInfo: "Hartford, Connecticut (location of this rescue) ranks 3rd in New England for animal rescue response effectiveness, with specialized training for first responders."
       };
     } else {
-      // Generic context for other stories
       return {
         summary: `This story is part of our extensive coverage on ${story.regions?.[0] || "global"} events. Our analysis shows increased media attention on this topic in recent weeks.`,
         insights: [
@@ -79,7 +75,6 @@ const AIOverviewSection: React.FC<AIOverviewSectionProps> = ({ story, isStoryDet
           </div>
           
           {isStoryDetail ? (
-            // Content for individual story view
             <div className="mb-6">
               <h3 className="font-medium text-sm uppercase text-newswire-mediumGray mb-2">Story Context & Analysis</h3>
               <div className="prose prose-sm max-w-none">
@@ -125,7 +120,6 @@ const AIOverviewSection: React.FC<AIOverviewSectionProps> = ({ story, isStoryDet
               </div>
             </div>
           ) : (
-            // Original content for homepage
             <div className="grid md:grid-cols-3 gap-6 mb-6">
               <div className="col-span-2">
                 <h3 className="font-medium text-sm uppercase text-newswire-mediumGray mb-2">Last 24 Hours Media Insights</h3>
@@ -216,7 +210,6 @@ const AIOverviewSection: React.FC<AIOverviewSectionProps> = ({ story, isStoryDet
         </div>
       </Card>
       
-      {/* Full-page Modal */}
       <AINewsModal 
         open={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
