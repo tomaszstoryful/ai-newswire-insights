@@ -226,3 +226,25 @@
 .max-w-4xl {
   max-width: 56rem;
 }
+
+/* Enhanced animations for modal */
+@keyframes modalZoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.modal-zoom-in {
+  animation: modalZoomIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Ensure scrollable content in modals */
+.dialog-scrollable {
+  max-height: calc(100vh - 10rem);
+  overflow-y: auto;
+}
