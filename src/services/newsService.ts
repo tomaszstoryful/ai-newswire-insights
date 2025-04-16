@@ -28,7 +28,7 @@ const sampleStory: NewsStory = {
   published_date: "2025-04-15T20:59:23Z",
   clearance_mark: "LICENSED",
   video_providing_partner: false,
-  summary: "Firefighters in Hartford, Connecticut, rescued a dog from the roof of a 2.5-story home on April 13, according to local media, citing officials.\n\nOfficials said the dog escaped through an open attic window and jumped onto the main roof of the home, located on the 200 block of New Park Avenue.\n\nVideo filmed by Kari L Bramhall shows firefighters using a ladder truck to safely retrieve the dog around 3:45 pm on Sunday.\n\nThe dog was not injured, did not fall, and was brought down safely, reports say.\n\n"Based on his bravery, climbing, and comfort being on that roof, I may have to offer this puppy a job," joked Hartford Fire Department District Chief Mario Oquendo Jr.",
+  summary: "Firefighters in Hartford, Connecticut, rescued a dog from the roof of a 2.5-story home on April 13, according to local media, citing officials.\n\nOfficials said the dog escaped through an open attic window and jumped onto the main roof of the home, located on the 200 block of New Park Avenue.\n\nVideo filmed by Kari L Bramhall shows firefighters using a ladder truck to safely retrieve the dog around 3:45 pm on Sunday.\n\nThe dog was not injured, did not fall, and was brought down safely, reports say.\n\n\"Based on his bravery, climbing, and comfort being on that roof, I may have to offer this puppy a job,\" joked Hartford Fire Department District Chief Mario Oquendo Jr.",
   place_id: "ChIJOThsZkohTIYRhvmYx7ZKWeY",
   regions: ["North America"]
 };
