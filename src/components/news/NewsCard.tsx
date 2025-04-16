@@ -1,9 +1,9 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, Check, AlertTriangle, Clock } from 'lucide-react';
+import { Calendar, Check, AlertTriangle, Clock, Play, Film, Download } from 'lucide-react';
 import { NewsStory } from '@/types/news';
-import { formatDate, formatTimeAgo } from '@/lib/utils';
+import { formatDate, formatTimeAgo, getRandomInt } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 
 interface NewsCardProps {
@@ -12,6 +12,11 @@ interface NewsCardProps {
 }
 
 const NewsCard: React.FC<NewsCardProps> = ({ story, size = 'medium' }) => {
+  // Generate a random video duration for demo purposes
+  const minutes = getRandomInt(1, 10);
+  const seconds = getRandomInt(10, 59);
+  const durationString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  
   const getClearanceBadge = (clearance: string) => {
     switch (clearance) {
       case 'LICENSED':
@@ -28,9 +33,16 @@ const NewsCard: React.FC<NewsCardProps> = ({ story, size = 'medium' }) => {
             RESTRICTED
           </Badge>
         );
-      default:
+      case 'CLEARED':
         return (
           <Badge className="bg-blue-500 hover:bg-blue-600 text-white flex items-center gap-1">
+            <Check size={12} />
+            CLEARED
+          </Badge>
+        );
+      default:
+        return (
+          <Badge className="bg-gray-500 hover:bg-gray-600 text-white flex items-center gap-1">
             PUBLIC
           </Badge>
         );
@@ -51,6 +63,15 @@ const NewsCard: React.FC<NewsCardProps> = ({ story, size = 'medium' }) => {
           <div className="absolute top-3 left-3">
             {getClearanceBadge(story.clearance_mark)}
           </div>
+          <div className="absolute bottom-3 right-3 bg-black/70 text-white text-xs px-2 py-1 rounded-md flex items-center">
+            <Clock size={12} className="mr-1" />
+            {durationString}
+          </div>
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/30">
+            <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center">
+              <Play size={24} className="text-newswire-accent ml-1" />
+            </div>
+          </div>
         </div>
         <div className="p-5">
           <h3 className={`font-serif font-semibold leading-tight group-hover:text-newswire-accent transition-colors ${
@@ -61,7 +82,7 @@ const NewsCard: React.FC<NewsCardProps> = ({ story, size = 'medium' }) => {
           
           {size !== 'small' && (
             <p className="text-newswire-darkGray text-sm line-clamp-2 mt-2 mb-3">
-              {story.summary}
+              {story.summary.split('\n')[0]}
             </p>
           )}
           
@@ -70,8 +91,13 @@ const NewsCard: React.FC<NewsCardProps> = ({ story, size = 'medium' }) => {
               <Calendar size={14} className="mr-1" />
               <span>{formatDate(story.published_date)}</span>
               <span className="mx-2">•</span>
-              <Clock size={14} className="mr-1" />
-              <span>{formatTimeAgo(story.published_date)}</span>
+              <Film size={14} className="mr-1" />
+              <span>{story.lead_item?.resource_type || 'video'}</span>
+            </div>
+            <div className="flex items-center">
+              <button className="p-1 rounded-full hover:bg-newswire-lightGray/50 transition-colors">
+                <Download size={16} className="text-newswire-mediumGray" />
+              </button>
             </div>
           </div>
         </div>

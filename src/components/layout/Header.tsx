@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Menu, User, Bell } from 'lucide-react';
+import { Search, Menu, User, Bell, Video, Filter, Headphones } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 
 const Header: React.FC = () => {
@@ -11,11 +11,11 @@ const Header: React.FC = () => {
         {/* Top header with date and sections */}
         <div className="py-2 text-xs text-newswire-mediumGray flex justify-between items-center border-b border-newswire-lightGray">
           <div className="hidden md:flex gap-4">
-            <span>U.S. Edition</span>
+            <span>Internal Platform</span>
             <span>{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</span>
           </div>
           <div className="flex gap-4">
-            <Link to="/sections" className="hover:text-newswire-black">Sections</Link>
+            <Link to="/dashboard" className="hover:text-newswire-black">Dashboard</Link>
             <Link to="/login" className="hover:text-newswire-black">Sign In</Link>
           </div>
         </div>
@@ -26,7 +26,11 @@ const Header: React.FC = () => {
             <Button variant="ghost" size="icon" className="md:hidden">
               <Menu size={24} />
             </Button>
-            <Link to="/" className="text-4xl font-display font-bold tracking-tight">NEWSWIRE</Link>
+            <Link to="/" className="text-4xl font-display font-bold tracking-tight flex items-center">
+              <Video className="mr-2" size={28} />
+              NEWSWIRE
+              <span className="text-xs ml-2 text-newswire-mediumGray">by storyful</span>
+            </Link>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon">
@@ -38,22 +42,28 @@ const Header: React.FC = () => {
             <Button variant="ghost" size="icon" className="hidden md:flex">
               <User size={20} />
             </Button>
-            <Button variant="outline" className="hidden md:inline-flex">Subscribe</Button>
+            <Button variant="outline" className="hidden md:inline-flex">
+              134 / 100 <Video className="ml-2" size={16} />
+            </Button>
+            <Button className="hidden md:inline-flex bg-orange-500 hover:bg-orange-600">
+              <Headphones className="mr-2" size={16} />
+              Talk to a Licensing Expert
+            </Button>
           </div>
         </div>
         
         {/* Navigation menu */}
         <nav className="py-2 border-t border-newswire-lightGray hidden md:block">
           <ul className="flex gap-6 text-sm font-medium overflow-x-auto">
-            <li><Link to="/home" className="hover:text-newswire-accent whitespace-nowrap">Home</Link></li>
-            <li><Link to="/world" className="hover:text-newswire-accent whitespace-nowrap">World</Link></li>
-            <li><Link to="/business" className="hover:text-newswire-accent whitespace-nowrap">Business</Link></li>
-            <li><Link to="/markets" className="hover:text-newswire-accent whitespace-nowrap">Markets</Link></li>
-            <li><Link to="/politics" className="hover:text-newswire-accent whitespace-nowrap">Politics</Link></li>
-            <li><Link to="/opinion" className="hover:text-newswire-accent whitespace-nowrap">Opinion</Link></li>
-            <li><Link to="/tech" className="hover:text-newswire-accent whitespace-nowrap">Technology</Link></li>
-            <li><Link to="/life" className="hover:text-newswire-accent whitespace-nowrap">Life & Arts</Link></li>
-            <li><Link to="/real-estate" className="hover:text-newswire-accent whitespace-nowrap">Real Estate</Link></li>
+            <li><Link to="/" className="hover:text-newswire-accent whitespace-nowrap">Home</Link></li>
+            <li><Link to="/top-stories" className="hover:text-newswire-accent whitespace-nowrap">Top Videos</Link></li>
+            <li><Link to="/trending" className="hover:text-newswire-accent whitespace-nowrap">Trending</Link></li>
+            <li><Link to="/categories" className="hover:text-newswire-accent whitespace-nowrap">Categories</Link></li>
+            <li><Link to="/regions" className="hover:text-newswire-accent whitespace-nowrap">Regions</Link></li>
+            <li><Link to="/licensed" className="hover:text-newswire-accent whitespace-nowrap">Licensed</Link></li>
+            <li><Link to="/restricted" className="hover:text-newswire-accent whitespace-nowrap">Restricted</Link></li>
+            <li><Link to="/cleared" className="hover:text-newswire-accent whitespace-nowrap">Cleared</Link></li>
+            <li><Link to="/licenses" className="hover:text-newswire-accent whitespace-nowrap">My Licenses</Link></li>
           </ul>
         </nav>
       </div>

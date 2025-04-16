@@ -1,12 +1,13 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import AIOverviewSection from '@/components/ai/AIOverviewSection';
 import RecommendedStories from '@/components/news/RecommendedStories';
 import { NewsStory } from '@/types/news';
-import { formatDate, formatTimeAgo } from '@/lib/utils';
+import { formatDate, formatTimeAgo, getRandomInt } from '@/lib/utils';
 import { getStoryBySlug, getRecommendedStories } from '@/services/newsService';
-import { Calendar, MapPin, Share2, Bookmark, Printer, Clock, FileText, Globe, Video, Check, AlertTriangle, Info } from 'lucide-react';
+import { Calendar, MapPin, Share2, Bookmark, Printer, Clock, FileText, Globe, Video, Check, AlertTriangle, Info, Download, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
@@ -17,6 +18,11 @@ const StoryDetail = () => {
   const [story, setStory] = useState<NewsStory | null>(null);
   const [recommendedStories, setRecommendedStories] = useState<NewsStory[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Generate a random video duration for demo purposes
+  const minutes = getRandomInt(2, 15);
+  const seconds = getRandomInt(10, 59);
+  const durationString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
 
   useEffect(() => {
     const fetchStory = async () => {
@@ -57,9 +63,16 @@ const StoryDetail = () => {
             RESTRICTED
           </Badge>
         );
-      default:
+      case 'CLEARED':
         return (
           <Badge className="bg-blue-500 hover:bg-blue-600 text-white flex items-center gap-1">
+            <Check size={12} />
+            CLEARED
+          </Badge>
+        );
+      default:
+        return (
+          <Badge className="bg-gray-500 hover:bg-gray-600 text-white flex items-center gap-1">
             PUBLIC
           </Badge>
         );
@@ -104,12 +117,12 @@ const StoryDetail = () => {
           <div className="lg:col-span-8">
             <div className="mb-6">
               <div className="flex flex-wrap items-center text-sm text-newswire-mediumGray gap-4 mb-4">
-                <span>News</span>
+                <span>Videos</span>
                 <span className="w-1 h-1 bg-newswire-mediumGray rounded-full"></span>
-                {story.slug && (
+                {story?.slug && (
                   <span>{story.slug.includes('-') ? story.slug.split('-')[0] : story.slug}</span>
                 )}
-                {story.regions && story.regions.length > 0 && (
+                {story?.regions && story.regions.length > 0 && (
                   <>
                     <span className="w-1 h-1 bg-newswire-mediumGray rounded-full"></span>
                     <span>{story.regions[0]}</span>
@@ -118,30 +131,38 @@ const StoryDetail = () => {
               </div>
               
               <h1 className="text-3xl md:text-5xl font-display font-bold leading-tight mb-4">
-                {story.title}
+                {story?.title}
               </h1>
               
               <div className="flex flex-wrap items-center text-sm text-newswire-mediumGray gap-4 mb-3">
                 <div className="flex items-center">
                   <Calendar size={16} className="mr-1" />
-                  <span>{formatDate(story.published_date)}</span>
+                  <span>{story && formatDate(story.published_date)}</span>
                 </div>
                 <div className="flex items-center">
                   <Clock size={16} className="mr-1" />
-                  <span>{formatTimeAgo(story.published_date)}</span>
+                  <span>{durationString}</span>
                 </div>
-                {story.place_id && (
+                {story?.place_id && (
                   <div className="flex items-center">
                     <MapPin size={16} className="mr-1" />
                     <span>Hartford, Connecticut</span>
                   </div>
                 )}
                 <div>
-                  {getClearanceBadge(story.clearance_mark)}
+                  {story && getClearanceBadge(story.clearance_mark)}
                 </div>
               </div>
               
-              <div className="flex gap-2 mb-6">
+              <div className="flex gap-3 mb-6">
+                <Button className="bg-newswire-accent hover:bg-newswire-accent/90 flex items-center gap-2">
+                  <Play size={16} />
+                  Preview
+                </Button>
+                <Button variant="outline" className="flex items-center gap-2">
+                  <Download size={16} />
+                  License Now
+                </Button>
                 <Button variant="outline" size="sm" className="text-xs">
                   <Share2 size={14} className="mr-1" />
                   Share
@@ -150,69 +171,75 @@ const StoryDetail = () => {
                   <Bookmark size={14} className="mr-1" />
                   Save
                 </Button>
-                <Button variant="outline" size="sm" className="text-xs hidden md:flex">
-                  <Printer size={14} className="mr-1" />
-                  Print
-                </Button>
               </div>
               
-              {/* Story Image */}
-              {story.lead_image && (
-                <div className="aspect-video w-full overflow-hidden mb-6 bg-newswire-lightGray">
+              {/* Video Preview */}
+              {story?.lead_image && (
+                <div className="relative aspect-video w-full overflow-hidden mb-6 bg-newswire-lightGray rounded-lg shadow-md">
                   <img 
                     src={story.lead_image.url} 
                     alt={story.title} 
                     className="w-full h-full object-cover"
                   />
+                  <div className="absolute bottom-3 right-3 bg-black/70 text-white text-xs px-2 py-1 rounded-md flex items-center">
+                    <Clock size={12} className="mr-1" />
+                    {durationString}
+                  </div>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-20 h-20 rounded-full bg-white/90 flex items-center justify-center cursor-pointer hover:bg-white transition-colors">
+                      <Play size={40} className="text-newswire-accent ml-1" />
+                    </div>
+                  </div>
                   <div className="text-sm text-newswire-mediumGray mt-2">
-                    <span className="italic">Image credit: {story.lead_image.filename}</span>
+                    <span className="italic">Video credit: {story.lead_image.filename}</span>
                   </div>
                 </div>
               )}
               
-              {/* Story Content */}
+              {/* Video Description */}
               <div className="prose max-w-none">
-                {story.summary.split('\n\n').map((paragraph, index) => (
+                <h3 className="text-xl font-semibold mb-2">Video Description</h3>
+                {story?.summary.split('\n\n').map((paragraph, index) => (
                   <p key={index} className="mb-4 text-lg leading-relaxed">
                     {paragraph}
                   </p>
                 ))}
               </div>
               
-              {/* Story Metadata */}
+              {/* Licensing Information */}
               <Card className="mt-8 mb-6">
                 <CardContent className="pt-6">
-                  <h3 className="text-lg font-semibold mb-4">Story Details</h3>
+                  <h3 className="text-lg font-semibold mb-4">Licensing Information</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="flex items-start">
                       <FileText size={18} className="mr-2 text-newswire-mediumGray mt-0.5" />
                       <div>
-                        <p className="text-sm font-medium">ID</p>
-                        <p className="text-sm text-newswire-mediumGray">{story.id}</p>
+                        <p className="text-sm font-medium">Video ID</p>
+                        <p className="text-sm text-newswire-mediumGray">{story?.id}</p>
                       </div>
                     </div>
                     <div className="flex items-start">
                       <Info size={18} className="mr-2 text-newswire-mediumGray mt-0.5" />
                       <div>
                         <p className="text-sm font-medium">Clearance Mark</p>
-                        <p className="text-sm text-newswire-mediumGray">{story.clearance_mark}</p>
+                        <p className="text-sm text-newswire-mediumGray">{story?.clearance_mark}</p>
                       </div>
                     </div>
                     <div className="flex items-start">
                       <Calendar size={18} className="mr-2 text-newswire-mediumGray mt-0.5" />
                       <div>
                         <p className="text-sm font-medium">Published Date</p>
-                        <p className="text-sm text-newswire-mediumGray">{formatDate(story.published_date)}</p>
+                        <p className="text-sm text-newswire-mediumGray">{story && formatDate(story.published_date)}</p>
                       </div>
                     </div>
                     <div className="flex items-start">
                       <Clock size={18} className="mr-2 text-newswire-mediumGray mt-0.5" />
                       <div>
                         <p className="text-sm font-medium">Updated At</p>
-                        <p className="text-sm text-newswire-mediumGray">{formatDate(story.updated_at)}</p>
+                        <p className="text-sm text-newswire-mediumGray">{story && formatDate(story.updated_at)}</p>
                       </div>
                     </div>
-                    {story.regions && (
+                    {story?.regions && (
                       <div className="flex items-start">
                         <Globe size={18} className="mr-2 text-newswire-mediumGray mt-0.5" />
                         <div>
@@ -221,7 +248,7 @@ const StoryDetail = () => {
                         </div>
                       </div>
                     )}
-                    {story.lead_item && (
+                    {story?.lead_item && (
                       <div className="flex items-start">
                         <Video size={18} className="mr-2 text-newswire-mediumGray mt-0.5" />
                         <div>
@@ -230,11 +257,11 @@ const StoryDetail = () => {
                         </div>
                       </div>
                     )}
-                    {story.collection_headline && (
+                    {story?.collection_headline && (
                       <div className="flex items-start">
                         <FileText size={18} className="mr-2 text-newswire-mediumGray mt-0.5" />
                         <div>
-                          <p className="text-sm font-medium">Collection Headline</p>
+                          <p className="text-sm font-medium">Collection Date</p>
                           <p className="text-sm text-newswire-mediumGray">{story.collection_headline}</p>
                         </div>
                       </div>
@@ -243,8 +270,14 @@ const StoryDetail = () => {
                       <Video size={18} className="mr-2 text-newswire-mediumGray mt-0.5" />
                       <div>
                         <p className="text-sm font-medium">Video Providing Partner</p>
-                        <p className="text-sm text-newswire-mediumGray">{story.video_providing_partner ? 'Yes' : 'No'}</p>
+                        <p className="text-sm text-newswire-mediumGray">{story?.video_providing_partner ? 'Yes' : 'No'}</p>
                       </div>
+                    </div>
+                    <div className="col-span-2 mt-4">
+                      <Button className="w-full bg-newswire-accent hover:bg-newswire-accent/90">
+                        <Download className="mr-2" size={16} />
+                        License This Video
+                      </Button>
                     </div>
                   </div>
                 </CardContent>
@@ -258,8 +291,8 @@ const StoryDetail = () => {
           </div>
           
           <div className="lg:col-span-4">
-            {/* Recommended Stories */}
-            <RecommendedStories stories={recommendedStories} currentStoryId={story.id} />
+            {/* Recommended Videos */}
+            <RecommendedStories stories={recommendedStories} currentStoryId={story?.id} />
           </div>
         </div>
       </div>

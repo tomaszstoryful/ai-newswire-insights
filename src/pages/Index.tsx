@@ -1,36 +1,38 @@
 
 import React, { useEffect, useState } from 'react';
 import Layout from '@/components/layout/Layout';
-import FeaturedStory from '@/components/news/FeaturedStory';
-import NewsCard from '@/components/news/NewsCard';
+import FeaturedVideo from '@/components/news/FeaturedStory';
+import VideoCard from '@/components/news/NewsCard';
 import AIAssistant from '@/components/ai/AIAssistant';
 import { NewsStory } from '@/types/news';
 import { getTopStories } from '@/services/newsService';
 import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
+import { Search, Filter, Clock, Calendar } from 'lucide-react';
 
 const Index = () => {
-  const [featuredStory, setFeaturedStory] = useState<NewsStory | null>(null);
-  const [stories, setStories] = useState<NewsStory[]>([]);
+  const [featuredVideo, setFeaturedVideo] = useState<NewsStory | null>(null);
+  const [videos, setVideos] = useState<NewsStory[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchNews = async () => {
+    const fetchVideos = async () => {
       try {
         setLoading(true);
-        const allStories = await getTopStories();
+        const allVideos = await getTopStories();
         
-        if (allStories.length > 0) {
-          setFeaturedStory(allStories[0]);
-          setStories(allStories.slice(1));
+        if (allVideos.length > 0) {
+          setFeaturedVideo(allVideos[0]);
+          setVideos(allVideos.slice(1));
         }
       } catch (error) {
-        console.error('Error fetching news:', error);
+        console.error('Error fetching videos:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchNews();
+    fetchVideos();
   }, []);
 
   if (loading) {
@@ -58,19 +60,58 @@ const Index = () => {
   return (
     <Layout>
       <div className="container mx-auto px-4 md:px-6 py-8">
+        <div className="mb-8">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+            <h1 className="text-3xl font-display font-bold">Video Licensing Platform</h1>
+            <div className="flex items-center space-x-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-newswire-mediumGray" size={16} />
+                <input 
+                  type="text" 
+                  placeholder="Search videos..." 
+                  className="pl-10 pr-4 py-2 border border-newswire-lightGray rounded-md focus:outline-none focus:ring-2 focus:ring-newswire-accent focus:border-transparent"
+                />
+              </div>
+              <Button variant="outline" size="sm" className="text-xs flex items-center gap-1">
+                <Filter size={14} />
+                Filters
+              </Button>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <Button variant="outline" className="flex justify-start items-center gap-2 bg-white hover:bg-gray-50">
+              <Calendar size={16} />
+              <span>Date</span>
+            </Button>
+            <Button variant="outline" className="flex justify-start items-center gap-2 bg-white hover:bg-gray-50">
+              <Clock size={16} />
+              <span>Video Length</span>
+            </Button>
+            <Button variant="outline" className="flex justify-start items-center gap-2 bg-white hover:bg-gray-50">
+              <Filter size={16} />
+              <span>Categories</span>
+            </Button>
+            <Button variant="outline" className="flex justify-start items-center gap-2 bg-white hover:bg-gray-50">
+              <Filter size={16} />
+              <span>Clearances</span>
+            </Button>
+          </div>
+        </div>
+        
         <AIAssistant />
         
-        {/* Featured Story */}
-        {featuredStory && <FeaturedStory story={featuredStory} />}
+        {/* Featured Video */}
+        {featuredVideo && <FeaturedVideo story={featuredVideo} />}
         
-        {/* All Stories */}
+        {/* All Videos */}
         <div className="mb-12">
           <h2 className="text-2xl font-display font-bold mb-6 pb-2 border-b-2 border-newswire-lightGray">
-            Latest News Stories
+            Available Videos
           </h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {stories.map((story) => (
-              <NewsCard key={story.id} story={story} size="medium" />
+            {videos.map((video) => (
+              <VideoCard key={video.id} story={video} size="medium" />
             ))}
           </div>
         </div>
