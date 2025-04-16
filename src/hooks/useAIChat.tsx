@@ -2,9 +2,10 @@
 import { useState, useEffect } from 'react';
 import { AIMessage, NewsStory } from '@/types/news';
 import { simulatePythonExecution, simulateNewsSearch } from '@/services/aiService';
+import { getTrendingStories } from '@/services/newsService';
 
 interface NewsResult extends NewsStory {
-  messageIndex: number;
+  messageId: string; // Changed from messageIndex to messageId for direct linking
 }
 
 export const useAIChat = (initialMessage: string = '') => {
@@ -94,9 +95,6 @@ export const useAIChat = (initialMessage: string = '') => {
       
       // If news results are needed, fetch and add them in a separate message
       if (needsNewsResults) {
-        // Fetch news stories
-        const newsStories = await simulateNewsSearch(userMessage);
-        
         // Create a new message for news stories
         const newsMessage: AIMessage = {
           id: Date.now().toString(),
@@ -107,26 +105,32 @@ export const useAIChat = (initialMessage: string = '') => {
         
         setMessages(prev => [...prev, newsMessage]);
         
-        // Store these stories with the message id
-        setNewsResults(prev => [
-          ...prev,
-          ...newsStories.map(story => ({
-            ...story,
-            messageIndex: messages.length + 1 // +1 because we've already added the Python results message
-          }))
-        ]);
-        
-        // Force a rerender by updating the news message slightly after adding to newsResults
-        setTimeout(() => {
-          setMessages(prevMessages => {
-            return prevMessages.map(msg => {
-              if (msg.id === newsMessage.id) {
-                return { ...msg, content: msg.content }; // This creates a new object reference
-              }
-              return msg;
-            });
-          });
-        }, 100);
+        // Get actual trending stories instead of simulated ones
+        try {
+          // First try to get stories from news search
+          const newsStories = await simulateNewsSearch(userMessage);
+          
+          // Add these stories with the message id
+          setNewsResults(prev => [
+            ...prev,
+            ...newsStories.map(story => ({
+              ...story,
+              messageId: newsMessage.id 
+            }))
+          ]);
+        } catch (error) {
+          // Fallback to trending stories if search fails
+          const trendingStories = await getTrendingStories();
+          
+          // Add these stories with the message id
+          setNewsResults(prev => [
+            ...prev,
+            ...trendingStories.map(story => ({
+              ...story,
+              messageId: newsMessage.id
+            }))
+          ]);
+        }
       }
     } else {
       // Simple response for queries that don't need Python analysis
@@ -166,9 +170,6 @@ export const useAIChat = (initialMessage: string = '') => {
       
       // For simple requests, also check if news results are needed
       if (needsNewsResults) {
-        // Fetch news stories 
-        const newsStories = await simulateNewsSearch(userMessage);
-        
         // Create a new message for news stories
         const newsMessage: AIMessage = {
           id: Date.now().toString(),
@@ -179,26 +180,32 @@ export const useAIChat = (initialMessage: string = '') => {
         
         setMessages(prev => [...prev, newsMessage]);
         
-        // Store these stories with the new message id
-        setNewsResults(prev => [
-          ...prev,
-          ...newsStories.map(story => ({
-            ...story,
-            messageIndex: messages.length + 1 // +1 because we've already added the first response
-          }))
-        ]);
-        
-        // Force a rerender by updating the news message slightly after adding to newsResults
-        setTimeout(() => {
-          setMessages(prevMessages => {
-            return prevMessages.map(msg => {
-              if (msg.id === newsMessage.id) {
-                return { ...msg, content: msg.content }; // This creates a new object reference
-              }
-              return msg;
-            });
-          });
-        }, 100);
+        // Get actual trending stories instead of simulated ones
+        try {
+          // First try to get stories from news search
+          const newsStories = await simulateNewsSearch(userMessage);
+          
+          // Add these stories with the message id
+          setNewsResults(prev => [
+            ...prev,
+            ...newsStories.map(story => ({
+              ...story,
+              messageId: newsMessage.id
+            }))
+          ]);
+        } catch (error) {
+          // Fallback to trending stories if search fails
+          const trendingStories = await getTrendingStories();
+          
+          // Add these stories with the message id
+          setNewsResults(prev => [
+            ...prev,
+            ...trendingStories.map(story => ({
+              ...story,
+              messageId: newsMessage.id
+            }))
+          ]);
+        }
       }
     }
     

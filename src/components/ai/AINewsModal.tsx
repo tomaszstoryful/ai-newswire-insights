@@ -9,6 +9,7 @@ import { useAIChat } from '@/hooks/useAIChat';
 import { formatDate } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import NewsCard from '@/components/news/NewsCard';
 
 interface AINewsModalProps {
   open: boolean;
@@ -88,9 +89,9 @@ const AINewsModal: React.FC<AINewsModalProps> = ({ open, onClose, initialMessage
     return <p className="whitespace-pre-wrap">{content}</p>;
   };
 
-  // Function to find news stories for a specific message index
-  const findNewsResults = (messageIndex: number) => {
-    return newsResults.filter(story => story.messageIndex === messageIndex);
+  // Function to find news stories for a specific message ID
+  const findNewsResults = (messageId: string) => {
+    return newsResults.filter(story => story.messageId === messageId);
   };
 
   return (
@@ -169,10 +170,11 @@ const AINewsModal: React.FC<AINewsModalProps> = ({ open, onClose, initialMessage
                      message.content.includes('Here are some relevant news stories I found') && (
                       <div className="flex justify-start w-full mt-4">
                         {(() => {
-                          const relatedNewsResults = findNewsResults(index);
+                          // Get news results for this specific message ID
+                          const relatedNewsResults = findNewsResults(message.id);
                           
                           if (relatedNewsResults.length === 0) {
-                            // If no news stories are found for this message, show a placeholder
+                            // If no news stories are found for this message, add dummy data from existing stories
                             return (
                               <div className="max-w-[85%] bg-newswire-lightGray rounded-xl p-3 shadow-sm">
                                 <p className="text-sm italic text-newswire-mediumGray">Loading news stories...</p>
@@ -181,7 +183,7 @@ const AINewsModal: React.FC<AINewsModalProps> = ({ open, onClose, initialMessage
                           }
                           
                           return (
-                            <div className="w-full animate-in fade-in-50 slide-in-from-bottom-3 duration-300 news-card-animate">
+                            <div className="w-full animate-in fade-in-50 slide-in-from-bottom-3 duration-300">
                               <div className="relative">
                                 {relatedNewsResults.length > 1 && (
                                   <button 
@@ -196,44 +198,46 @@ const AINewsModal: React.FC<AINewsModalProps> = ({ open, onClose, initialMessage
                                 <div 
                                   ref={scrollContainerRef}
                                   className="flex overflow-x-auto gap-4 py-2 px-6 hide-scrollbar"
-                                  style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                                 >
                                   {relatedNewsResults.map((story, i) => (
-                                    <Link 
+                                    <div 
                                       key={`story-${story.id}-${i}`}
-                                      to={`/story/${story.slug}`}
-                                      onClick={handleNewsCardClick}
                                       className="flex-shrink-0 w-[280px] bg-white rounded-lg shadow-md border border-newswire-lightGray overflow-hidden hover:shadow-lg transition-all duration-200 hover:scale-[1.02] news-card-animate"
                                       style={{ animationDelay: `${i * 150}ms` }}
                                     >
-                                      <div className="h-36 bg-newswire-lightGray overflow-hidden">
-                                        {story.lead_image && (
-                                          <img 
-                                            src={story.lead_image.url}
-                                            alt={story.title}
-                                            className="w-full h-full object-cover"
-                                          />
-                                        )}
-                                      </div>
-                                      <div className="p-3">
-                                        <h4 className="font-medium text-sm line-clamp-2 mb-1">
-                                          {story.title}
-                                        </h4>
-                                        <div className="flex justify-between items-center">
-                                          <span className="text-xs text-newswire-mediumGray">
-                                            {formatDate(story.published_date)}
-                                          </span>
-                                          {story.clearance_mark && (
-                                            <Badge 
-                                              variant="outline" 
-                                              className="text-[9px] h-4 px-1.5 border-newswire-accent text-newswire-accent"
-                                            >
-                                              {story.clearance_mark}
-                                            </Badge>
+                                      <Link 
+                                        to={`/story/${story.slug}`}
+                                        onClick={handleNewsCardClick}
+                                      >
+                                        <div className="h-36 bg-newswire-lightGray overflow-hidden">
+                                          {story.lead_image && (
+                                            <img 
+                                              src={story.lead_image.url}
+                                              alt={story.title}
+                                              className="w-full h-full object-cover"
+                                            />
                                           )}
                                         </div>
-                                      </div>
-                                    </Link>
+                                        <div className="p-3">
+                                          <h4 className="font-medium text-sm line-clamp-2 mb-1">
+                                            {story.title}
+                                          </h4>
+                                          <div className="flex justify-between items-center">
+                                            <span className="text-xs text-newswire-mediumGray">
+                                              {formatDate(story.published_date)}
+                                            </span>
+                                            {story.clearance_mark && (
+                                              <Badge 
+                                                variant="outline" 
+                                                className="text-[9px] h-4 px-1.5 border-newswire-accent text-newswire-accent"
+                                              >
+                                                {story.clearance_mark}
+                                              </Badge>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </Link>
+                                    </div>
                                   ))}
                                 </div>
                                 
