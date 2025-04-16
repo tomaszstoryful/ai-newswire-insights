@@ -90,6 +90,7 @@ const AINewsModal: React.FC<AINewsModalProps> = ({ open, onClose, initialMessage
 
   // Function to render news stories for a message
   const renderNewsStories = (messageIndex: number) => {
+    // Find news stories that correspond to this message index
     const relatedNewsResults = newsResults.filter(
       story => story.messageIndex === messageIndex
     );
@@ -97,16 +98,18 @@ const AINewsModal: React.FC<AINewsModalProps> = ({ open, onClose, initialMessage
     if (relatedNewsResults.length === 0) return null;
     
     return (
-      <div className="mt-4 animate-in fade-in-50 slide-in-from-bottom-3 duration-300">
+      <div className="mt-4 w-full animate-in fade-in-50 slide-in-from-bottom-3 duration-300">
         <div className="mb-2 text-sm font-medium">Top Stories:</div>
         <div className="relative">
-          <button 
-            onClick={scrollLeft}
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/80 hover:bg-white rounded-full p-1 shadow-md transition-all"
-            aria-label="Scroll left"
-          >
-            <ChevronLeft size={20} />
-          </button>
+          {relatedNewsResults.length > 1 && (
+            <button 
+              onClick={scrollLeft}
+              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/80 hover:bg-white rounded-full p-1 shadow-md transition-all"
+              aria-label="Scroll left"
+            >
+              <ChevronLeft size={20} />
+            </button>
+          )}
           
           <div 
             ref={scrollContainerRef}
@@ -115,7 +118,7 @@ const AINewsModal: React.FC<AINewsModalProps> = ({ open, onClose, initialMessage
           >
             {relatedNewsResults.map((story, i) => (
               <Link 
-                key={i} 
+                key={`story-${story.id}-${i}`}
                 to={`/story/${story.slug}`}
                 onClick={handleNewsCardClick}
                 className="flex-shrink-0 w-[280px] bg-white rounded-lg shadow-md border border-newswire-lightGray overflow-hidden hover:shadow-lg transition-all duration-200 hover:scale-[1.02]"
@@ -151,13 +154,15 @@ const AINewsModal: React.FC<AINewsModalProps> = ({ open, onClose, initialMessage
             ))}
           </div>
           
-          <button 
-            onClick={scrollRight}
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/80 hover:bg-white rounded-full p-1 shadow-md transition-all"
-            aria-label="Scroll right"
-          >
-            <ChevronRight size={20} />
-          </button>
+          {relatedNewsResults.length > 1 && (
+            <button 
+              onClick={scrollRight}
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/80 hover:bg-white rounded-full p-1 shadow-md transition-all"
+              aria-label="Scroll right"
+            >
+              <ChevronRight size={20} />
+            </button>
+          )}
         </div>
       </div>
     );
@@ -197,7 +202,7 @@ const AINewsModal: React.FC<AINewsModalProps> = ({ open, onClose, initialMessage
               <div className="space-y-6 max-w-5xl mx-auto pb-4">
                 {messages.map((message, index) => (
                   <div 
-                    key={index} 
+                    key={message.id} 
                     className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in-50 slide-in-from-bottom-3 duration-300`}
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
@@ -228,11 +233,19 @@ const AINewsModal: React.FC<AINewsModalProps> = ({ open, onClose, initialMessage
                       ) : (
                         <MessageContent content={message.content} type="text" />
                       )}
-                      
-                      {/* Render news stories for this message */}
-                      {message.role === 'assistant' && renderNewsStories(index)}
                     </div>
                   </div>
+                ))}
+                
+                {/* Render news stories after each message */}
+                {messages.map((message, index) => (
+                  message.role === 'assistant' && message.content.includes('Here are some relevant news stories I found') ? (
+                    <div key={`news-${message.id}`} className="flex justify-start">
+                      <div className="max-w-[85%] w-full">
+                        {renderNewsStories(index)}
+                      </div>
+                    </div>
+                  ) : null
                 ))}
                 
                 {isGenerating && (

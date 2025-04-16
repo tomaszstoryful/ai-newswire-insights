@@ -87,11 +87,13 @@ export const useAIChat = (initialMessage: string = '') => {
         const newsStories = await simulateNewsSearch(userMessage);
         
         // Store these stories with the current message index for proper display
-        const currentMessageIndex = messages.length;
-        setNewsResults(newsStories.map(story => ({
-          ...story,
-          messageIndex: currentMessageIndex // This will associate with the AI response message
-        })));
+        setNewsResults(prev => [
+          ...prev,
+          ...newsStories.map(story => ({
+            ...story,
+            messageIndex: messages.length // This will associate with the AI response message
+          }))
+        ]);
         
         newsStoriesMessage = '\n\nHere are some relevant news stories I found:';
       }
@@ -149,11 +151,13 @@ export const useAIChat = (initialMessage: string = '') => {
         const newsStories = await simulateNewsSearch(userMessage);
         
         // Store these stories with the current message index
-        const currentMessageIndex = messages.length;
-        setNewsResults(newsStories.map(story => ({
-          ...story,
-          messageIndex: currentMessageIndex 
-        })));
+        setNewsResults(prev => [
+          ...prev,
+          ...newsStories.map(story => ({
+            ...story,
+            messageIndex: messages.length
+          }))
+        ]);
         
         // Update the message to indicate news stories
         const newsStoriesMessage = '\n\nHere are some relevant news stories I found:';

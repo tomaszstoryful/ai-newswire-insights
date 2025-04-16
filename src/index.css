@@ -33,3 +33,13 @@
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
+
+/* Add a gentle slide animation for news cards */
+@keyframes slideInBottom {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.news-card-animate {
+  animation: slideInBottom 0.4s ease forwards;
+}
