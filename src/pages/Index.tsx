@@ -65,10 +65,10 @@ const Index = () => {
         
         {/* All Stories */}
         <div className="mb-12">
-          <h2 className="text-2xl font-display font-bold mb-6 pb-2 border-b border-newswire-lightGray">
+          <h2 className="text-2xl font-display font-bold mb-6 pb-2 border-b-2 border-newswire-lightGray">
             Latest News Stories
           </h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {stories.map((story) => (
               <NewsCard key={story.id} story={story} size="medium" />
             ))}

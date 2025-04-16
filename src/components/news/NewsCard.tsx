@@ -38,43 +38,40 @@ const NewsCard: React.FC<NewsCardProps> = ({ story, size = 'medium' }) => {
   };
 
   return (
-    <Link to={`/story/${story.slug}`} className="group block">
-      <div className="border border-gray-200 rounded-lg overflow-hidden transition-all duration-200 hover:shadow-md h-full">
+    <Link to={`/story/${story.slug}`} className="group block h-full">
+      <div className="border border-gray-200 rounded-lg overflow-hidden transition-all duration-200 hover:shadow-md h-full bg-white hover:border-newswire-accent/30">
         <div className={`relative aspect-video overflow-hidden bg-newswire-lightGray`}>
           {story.lead_image && (
             <img 
               src={story.lead_image.url} 
               alt={story.title} 
-              className="w-full h-full object-cover transition-transform group-hover:scale-105"
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
           )}
-        </div>
-        <div className="p-4">
-          <div className="flex items-start justify-between gap-2 mb-2">
-            <h3 className={`font-serif font-semibold leading-tight group-hover:text-newswire-accent ${
-              size === 'small' ? 'text-base' : size === 'medium' ? 'text-xl' : 'text-2xl'
-            }`}>
-              {story.title}
-            </h3>
+          <div className="absolute top-3 left-3">
+            {getClearanceBadge(story.clearance_mark)}
           </div>
+        </div>
+        <div className="p-5">
+          <h3 className={`font-serif font-semibold leading-tight group-hover:text-newswire-accent transition-colors ${
+            size === 'small' ? 'text-base' : size === 'medium' ? 'text-xl' : 'text-2xl'
+          }`}>
+            {story.title}
+          </h3>
           
           {size !== 'small' && (
-            <p className="text-newswire-darkGray text-sm line-clamp-2 mb-3">
+            <p className="text-newswire-darkGray text-sm line-clamp-2 mt-2 mb-3">
               {story.summary}
             </p>
           )}
           
-          <div className="flex flex-wrap items-center justify-between mt-2">
+          <div className="flex flex-wrap items-center justify-between mt-3 pt-3 border-t border-gray-100">
             <div className="flex items-center text-xs text-newswire-mediumGray">
               <Calendar size={14} className="mr-1" />
               <span>{formatDate(story.published_date)}</span>
               <span className="mx-2">•</span>
               <Clock size={14} className="mr-1" />
               <span>{formatTimeAgo(story.published_date)}</span>
-            </div>
-            
-            <div className="mt-2 md:mt-0">
-              {getClearanceBadge(story.clearance_mark)}
             </div>
           </div>
         </div>
