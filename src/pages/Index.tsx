@@ -57,39 +57,34 @@ const Index = () => {
   return (
     <Layout>
       <div className="container mx-auto px-4 md:px-6 py-8">
-        <div className="mb-8">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-            <h1 className="text-3xl font-display font-bold">Video Library</h1>
-            <div className="flex items-center space-x-3">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-newswire-mediumGray" size={16} />
-                <input 
-                  type="text" 
-                  placeholder="Search videos..." 
-                  className="pl-10 pr-4 py-2 border border-newswire-lightGray rounded-md focus:outline-none focus:ring-2 focus:ring-newswire-accent focus:border-transparent"
-                />
-              </div>
-              <Button variant="outline" size="sm" className="text-xs flex items-center gap-1">
-                <Filter size={14} />
-                Filters
-              </Button>
-            </div>
-          </div>
-        </div>
-        
         {/* AI Insights Section */}
         {featuredVideo && <AIOverviewSection story={featuredVideo} />}
         
         {/* Available Videos */}
-        <div className="mb-12">
-          <h2 className="text-2xl font-display font-bold mb-6 pb-2 border-b-2 border-newswire-lightGray">
+        <div className="mb-12 flex justify-between items-center">
+          <h2 className="text-2xl font-display font-bold pb-2 border-b-2 border-newswire-lightGray">
             Available Videos
           </h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {videos.map((video) => (
-              <VideoCard key={video.id} story={video} size="medium" />
-            ))}
+          <div className="flex items-center space-x-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-newswire-mediumGray" size={16} />
+              <input 
+                type="text" 
+                placeholder="Search videos..." 
+                className="pl-10 pr-4 py-2 border border-newswire-lightGray rounded-md focus:outline-none focus:ring-2 focus:ring-newswire-accent focus:border-transparent"
+              />
+            </div>
+            <Button variant="outline" size="sm" className="text-xs flex items-center gap-1">
+              <Filter size={14} />
+              Filters
+            </Button>
           </div>
+        </div>
+        
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {videos.map((video) => (
+            <VideoCard key={video.id} story={video} size="medium" />
+          ))}
         </div>
       </div>
     </Layout>
