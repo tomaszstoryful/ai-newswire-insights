@@ -87,13 +87,15 @@ export const useAIChat = (initialMessage: string = '') => {
         msg.id === initialResponse.id ? updatedMessage : msg
       ));
       
-      // If news results are needed
+      // If news results are needed, fetch and add them
       if (needsNewsResults) {
         // Fetch news stories
         const newsStories = await simulateNewsSearch(userMessage);
+        
+        // Store these stories with the current message index for proper display
         setNewsResults(newsStories.map(story => ({
           ...story,
-          messageIndex: messages.length // Associate with the current message index
+          messageIndex: messages.length // This will associate with the AI response message
         })));
       }
     } else {
