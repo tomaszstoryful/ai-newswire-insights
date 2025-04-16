@@ -9,34 +9,33 @@ const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
             <h3 className="text-xl font-bold font-display mb-4">NEWSWIRE</h3>
-            <p className="text-sm text-newswire-mediumGray">Breaking news and analysis at the speed of business.</p>
+            <p className="text-sm text-newswire-mediumGray">Video Licensing Platform for Global Media</p>
           </div>
           
           <div>
-            <h4 className="font-bold mb-3 text-sm">Customer Service</h4>
+            <h4 className="font-bold mb-3 text-sm">Licensing Services</h4>
+            <ul className="space-y-2 text-sm">
+              <li><Link to="/licensing/process" className="text-newswire-mediumGray hover:text-newswire-black">Licensing Process</Link></li>
+              <li><Link to="/licensing/pricing" className="text-newswire-mediumGray hover:text-newswire-black">Pricing</Link></li>
+              <li><Link to="/licensing/terms" className="text-newswire-mediumGray hover:text-newswire-black">License Terms</Link></li>
+            </ul>
+          </div>
+          
+          <div>
+            <h4 className="font-bold mb-3 text-sm">Video Library</h4>
+            <ul className="space-y-2 text-sm">
+              <li><Link to="/categories" className="text-newswire-mediumGray hover:text-newswire-black">Video Categories</Link></li>
+              <li><Link to="/trending" className="text-newswire-mediumGray hover:text-newswire-black">Trending Videos</Link></li>
+              <li><Link to="/regions" className="text-newswire-mediumGray hover:text-newswire-black">Regional Content</Link></li>
+            </ul>
+          </div>
+          
+          <div>
+            <h4 className="font-bold mb-3 text-sm">Support</h4>
             <ul className="space-y-2 text-sm">
               <li><Link to="/help" className="text-newswire-mediumGray hover:text-newswire-black">Help Center</Link></li>
-              <li><Link to="/contact" className="text-newswire-mediumGray hover:text-newswire-black">Contact Us</Link></li>
+              <li><Link to="/contact" className="text-newswire-mediumGray hover:text-newswire-black">Contact Sales</Link></li>
               <li><Link to="/faq" className="text-newswire-mediumGray hover:text-newswire-black">FAQs</Link></li>
-            </ul>
-          </div>
-          
-          <div>
-            <h4 className="font-bold mb-3 text-sm">Tools & Features</h4>
-            <ul className="space-y-2 text-sm">
-              <li><Link to="/email" className="text-newswire-mediumGray hover:text-newswire-black">Email Newsletters</Link></li>
-              <li><Link to="/alerts" className="text-newswire-mediumGray hover:text-newswire-black">News Alerts</Link></li>
-              <li><Link to="/podcast" className="text-newswire-mediumGray hover:text-newswire-black">Podcasts</Link></li>
-              <li><Link to="/video" className="text-newswire-mediumGray hover:text-newswire-black">Video Center</Link></li>
-            </ul>
-          </div>
-          
-          <div>
-            <h4 className="font-bold mb-3 text-sm">Ads</h4>
-            <ul className="space-y-2 text-sm">
-              <li><Link to="/advertising" className="text-newswire-mediumGray hover:text-newswire-black">Advertising</Link></li>
-              <li><Link to="/commercial" className="text-newswire-mediumGray hover:text-newswire-black">Commercial Opportunities</Link></li>
-              <li><Link to="/partnerships" className="text-newswire-mediumGray hover:text-newswire-black">Partnership Inquiries</Link></li>
             </ul>
           </div>
         </div>
@@ -44,7 +43,7 @@ const Footer: React.FC = () => {
         <div className="mt-12 pt-6 border-t border-gray-300">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-xs text-newswire-mediumGray">
-              © {new Date().getFullYear()} Newswire. All Rights Reserved.
+              © {new Date().getFullYear()} Newswire Video Licensing. All Rights Reserved.
             </p>
             <div className="flex gap-4 mt-4 md:mt-0">
               <Link to="/privacy" className="text-xs text-newswire-mediumGray hover:text-newswire-black">Privacy Policy</Link>

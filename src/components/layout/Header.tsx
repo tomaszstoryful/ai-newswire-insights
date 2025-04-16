@@ -27,9 +27,7 @@ const Header: React.FC = () => {
               <Menu size={24} />
             </Button>
             <Link to="/" className="text-4xl font-display font-bold tracking-tight flex items-center">
-              <Video className="mr-2" size={28} />
               NEWSWIRE
-              <span className="text-xs ml-2 text-newswire-mediumGray">by storyful</span>
             </Link>
           </div>
           <div className="flex items-center gap-2">
