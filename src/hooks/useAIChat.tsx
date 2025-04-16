@@ -72,25 +72,71 @@ const dummyNewsStories: NewsStory[] = [
   }
 ];
 
+// Create local storage keys
+const STORAGE_KEYS = {
+  MESSAGES: 'newswire_ai_messages',
+  NEWS_RESULTS: 'newswire_ai_news_results'
+};
+
 export const useAIChat = (initialMessage: string = '') => {
-  const [messages, setMessages] = useState<AIMessage[]>([
-    {
-      id: '1',
-      role: 'assistant',
-      content: 'Hello! I\'m your Newswire AI assistant. I can analyze news data, find trends, and answer questions using Python for data analysis. What would you like to know?',
-      timestamp: new Date(),
+  // Initialize state from localStorage or default values
+  const [messages, setMessages] = useState<AIMessage[]>(() => {
+    const savedMessages = localStorage.getItem(STORAGE_KEYS.MESSAGES);
+    if (savedMessages) {
+      try {
+        // Parse dates correctly when loading from localStorage
+        const parsedMessages = JSON.parse(savedMessages);
+        return parsedMessages.map((msg: any) => ({
+          ...msg,
+          timestamp: new Date(msg.timestamp)
+        }));
+      } catch (e) {
+        console.error("Error parsing saved messages:", e);
+      }
     }
-  ]);
+    
+    // Default welcome message if nothing in localStorage
+    return [
+      {
+        id: '1',
+        role: 'assistant',
+        content: 'Hello! I\'m your Newswire AI assistant. I can analyze news data, find trends, and answer questions using Python for data analysis. What would you like to know?',
+        timestamp: new Date(),
+      }
+    ];
+  });
   
   const [isGenerating, setIsGenerating] = useState(false);
-  const [newsResults, setNewsResults] = useState<NewsResult[]>([]);
+  
+  // Initialize news results from localStorage or empty array
+  const [newsResults, setNewsResults] = useState<NewsResult[]>(() => {
+    const savedNewsResults = localStorage.getItem(STORAGE_KEYS.NEWS_RESULTS);
+    if (savedNewsResults) {
+      try {
+        return JSON.parse(savedNewsResults);
+      } catch (e) {
+        console.error("Error parsing saved news results:", e);
+      }
+    }
+    return [];
+  });
+  
+  // Save messages to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(messages));
+  }, [messages]);
+  
+  // Save news results to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.NEWS_RESULTS, JSON.stringify(newsResults));
+  }, [newsResults]);
   
   // Handle initial message if provided
   useEffect(() => {
-    if (initialMessage) {
+    if (initialMessage && messages.length === 1) { // Only use initialMessage if we're starting fresh
       appendUserMessage(initialMessage);
     }
-  }, []);
+  }, [initialMessage]);
   
   const appendUserMessage = (content: string) => {
     const newUserMessage: AIMessage = {
@@ -242,10 +288,24 @@ export const useAIChat = (initialMessage: string = '') => {
     setIsGenerating(false);
   };
   
+  // Add a function to clear chat history
+  const clearChatHistory = () => {
+    setMessages([{
+      id: '1',
+      role: 'assistant',
+      content: 'Hello! I\'m your Newswire AI assistant. I can analyze news data, find trends, and answer questions using Python for data analysis. What would you like to know?',
+      timestamp: new Date(),
+    }]);
+    setNewsResults([]);
+    localStorage.removeItem(STORAGE_KEYS.MESSAGES);
+    localStorage.removeItem(STORAGE_KEYS.NEWS_RESULTS);
+  };
+  
   return {
     messages,
     appendUserMessage,
     isGenerating,
-    newsResults
+    newsResults,
+    clearChatHistory
   };
 };

@@ -1,22 +1,55 @@
 
-import React, { useState } from 'react';
-import { Bot, X, ChevronDown, ChevronUp, Send } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Bot, X, ChevronDown, ChevronUp, Send, Trash2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { AIMessage } from '@/types/news';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+// Storage key for assistant chat
+const STORAGE_KEY = 'newswire_assistant_messages';
 
 const AIAssistant: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
-  const [messages, setMessages] = useState<AIMessage[]>([
-    {
-      id: '1',
-      role: 'assistant',
-      content: 'Hello! I\'m your Newswire AI assistant. I can help you find articles, summarize content, and answer questions about the news. How can I assist you today?',
-      timestamp: new Date(),
+  
+  // Initialize messages from localStorage or use default
+  const [messages, setMessages] = useState<AIMessage[]>(() => {
+    const savedMessages = localStorage.getItem(STORAGE_KEY);
+    if (savedMessages) {
+      try {
+        // Parse dates correctly when loading from localStorage
+        const parsedMessages = JSON.parse(savedMessages);
+        return parsedMessages.map((msg: any) => ({
+          ...msg,
+          timestamp: new Date(msg.timestamp)
+        }));
+      } catch (e) {
+        console.error("Error parsing saved assistant messages:", e);
+      }
     }
-  ]);
+    
+    // Default welcome message
+    return [
+      {
+        id: '1',
+        role: 'assistant',
+        content: 'Hello! I\'m your Newswire AI assistant. I can help you find articles, summarize content, and answer questions about the news. How can I assist you today?',
+        timestamp: new Date(),
+      }
+    ];
+  });
+
+  // Save messages to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+  }, [messages]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,6 +77,19 @@ const AIAssistant: React.FC = () => {
     }
   };
 
+  const clearChatHistory = () => {
+    if (window.confirm("Are you sure you want to clear the chat history? This cannot be undone.")) {
+      setMessages([
+        {
+          id: Date.now().toString(),
+          role: 'assistant',
+          content: 'Hello! I\'m your Newswire AI assistant. I can help you find articles, summarize content, and answer questions about the news. How can I assist you today?',
+          timestamp: new Date(),
+        }
+      ]);
+    }
+  };
+
   return (
     <div className="fixed bottom-0 right-4 md:right-8 z-40">
       {!isOpen ? (
@@ -62,6 +108,18 @@ const AIAssistant: React.FC = () => {
               <span className="font-medium">Newswire AI Assistant</span>
             </div>
             <div className="flex gap-1">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <Trash2 size={16} />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={clearChatHistory}>
+                    Clear Chat History
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsOpen(false)}>
                 <ChevronDown size={18} />
               </Button>
