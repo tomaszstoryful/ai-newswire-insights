@@ -93,9 +93,10 @@ export const useAIChat = (initialMessage: string = '') => {
         const newsStories = await simulateNewsSearch(userMessage);
         
         // Store these stories with the current message index for proper display
+        const currentMessageIndex = messages.length;
         setNewsResults(newsStories.map(story => ({
           ...story,
-          messageIndex: messages.length // This will associate with the AI response message
+          messageIndex: currentMessageIndex // This will associate with the AI response message
         })));
       }
     } else {
