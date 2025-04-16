@@ -7,6 +7,7 @@ import { NewsStory } from '@/types/news';
 import { getTopStories } from '@/services/newsService';
 import { Button } from '@/components/ui/button';
 import { Search, Filter } from 'lucide-react';
+import AIOverviewSection from '@/components/ai/AIOverviewSection';
 
 const Index = () => {
   const [featuredVideo, setFeaturedVideo] = useState<NewsStory | null>(null);
@@ -78,8 +79,8 @@ const Index = () => {
           </div>
         </div>
         
-        {/* Featured Video */}
-        {featuredVideo && <FeaturedVideo story={featuredVideo} />}
+        {/* AI Overview Section */}
+        {featuredVideo && <AIOverviewSection story={featuredVideo} />}
         
         {/* All Videos */}
         <div className="mb-12">
