@@ -3,12 +3,10 @@ import React, { useEffect, useState } from 'react';
 import Layout from '@/components/layout/Layout';
 import FeaturedVideo from '@/components/news/FeaturedStory';
 import VideoCard from '@/components/news/NewsCard';
-import AIAssistant from '@/components/ai/AIAssistant';
 import { NewsStory } from '@/types/news';
 import { getTopStories } from '@/services/newsService';
-import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import { Search, Filter, Clock, Calendar } from 'lucide-react';
+import { Search, Filter } from 'lucide-react';
 
 const Index = () => {
   const [featuredVideo, setFeaturedVideo] = useState<NewsStory | null>(null);
@@ -62,7 +60,7 @@ const Index = () => {
       <div className="container mx-auto px-4 md:px-6 py-8">
         <div className="mb-8">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-            <h1 className="text-3xl font-display font-bold">Video Licensing Platform</h1>
+            <h1 className="text-3xl font-display font-bold">Video Library</h1>
             <div className="flex items-center space-x-3">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-newswire-mediumGray" size={16} />
@@ -78,28 +76,7 @@ const Index = () => {
               </Button>
             </div>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <Button variant="outline" className="flex justify-start items-center gap-2 bg-white hover:bg-gray-50">
-              <Calendar size={16} />
-              <span>Date</span>
-            </Button>
-            <Button variant="outline" className="flex justify-start items-center gap-2 bg-white hover:bg-gray-50">
-              <Clock size={16} />
-              <span>Video Length</span>
-            </Button>
-            <Button variant="outline" className="flex justify-start items-center gap-2 bg-white hover:bg-gray-50">
-              <Filter size={16} />
-              <span>Categories</span>
-            </Button>
-            <Button variant="outline" className="flex justify-start items-center gap-2 bg-white hover:bg-gray-50">
-              <Filter size={16} />
-              <span>Clearances</span>
-            </Button>
-          </div>
         </div>
-        
-        <AIAssistant />
         
         {/* Featured Video */}
         {featuredVideo && <FeaturedVideo story={featuredVideo} />}
