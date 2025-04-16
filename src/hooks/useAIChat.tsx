@@ -80,23 +80,8 @@ export const useAIChat = (initialMessage: string = '') => {
       // Execute simulated Python code
       const pythonResult = await simulatePythonExecution(userMessage);
       
-      // If news results are needed, fetch them
-      let newsStoriesMessage = '';
-      if (needsNewsResults) {
-        // Fetch news stories
-        const newsStories = await simulateNewsSearch(userMessage);
-        
-        // Store these stories with the current message index for proper display
-        setNewsResults(prev => [
-          ...prev,
-          ...newsStories.map(story => ({
-            ...story,
-            messageIndex: messages.length // This will associate with the AI response message
-          }))
-        ]);
-        
-        newsStoriesMessage = '\n\nHere are some relevant news stories I found:';
-      }
+      const newsStoriesMessage = needsNewsResults ? 
+        '\n\nHere are some relevant news stories I found:' : '';
       
       const updatedMessage = {
         ...initialResponse,
@@ -106,6 +91,22 @@ export const useAIChat = (initialMessage: string = '') => {
       setMessages(prev => prev.map(msg => 
         msg.id === initialResponse.id ? updatedMessage : msg
       ));
+      
+      // If news results are needed, fetch them
+      if (needsNewsResults) {
+        // Fetch news stories
+        const newsStories = await simulateNewsSearch(userMessage);
+        
+        // Store these stories with the current message index for proper display
+        const messageIndex = messages.length;
+        setNewsResults(prev => [
+          ...prev,
+          ...newsStories.map(story => ({
+            ...story,
+            messageIndex: messageIndex // Associate with the AI response message
+          }))
+        ]);
+      }
     } else {
       // Simple response for queries that don't need Python analysis
       responseContent = `Based on the news data in our system, ${
@@ -120,6 +121,8 @@ export const useAIChat = (initialMessage: string = '') => {
         content: responseContent,
         timestamp: new Date(),
       };
+      
+      setMessages(prev => [...prev, aiResponse]);
       
       // Simulate streaming by showing response word by word
       let partialContent = '';
@@ -136,29 +139,12 @@ export const useAIChat = (initialMessage: string = '') => {
           prev.map(msg => msg.id === aiResponse.id ? partialResponse : msg)
         );
         
-        if (i === 0) {
-          setMessages(prev => [...prev, partialResponse]);
-        }
-        
         // Pause between words to simulate streaming
         await new Promise(resolve => setTimeout(resolve, 50));
       }
       
       // For simple requests, also check if news results are needed
       if (needsNewsResults) {
-        // Fetch news stories after a brief delay
-        await new Promise(resolve => setTimeout(resolve, 500));
-        const newsStories = await simulateNewsSearch(userMessage);
-        
-        // Store these stories with the current message index
-        setNewsResults(prev => [
-          ...prev,
-          ...newsStories.map(story => ({
-            ...story,
-            messageIndex: messages.length
-          }))
-        ]);
-        
         // Update the message to indicate news stories
         const newsStoriesMessage = '\n\nHere are some relevant news stories I found:';
         const updatedContent = aiResponse.content + newsStoriesMessage;
@@ -166,6 +152,20 @@ export const useAIChat = (initialMessage: string = '') => {
         setMessages(prev => prev.map(msg => 
           msg.id === aiResponse.id ? {...msg, content: updatedContent} : msg
         ));
+        
+        // Fetch news stories after a brief delay
+        await new Promise(resolve => setTimeout(resolve, 500));
+        const newsStories = await simulateNewsSearch(userMessage);
+        
+        // Store these stories with the current message index
+        const messageIndex = messages.length;
+        setNewsResults(prev => [
+          ...prev,
+          ...newsStories.map(story => ({
+            ...story,
+            messageIndex: messageIndex
+          }))
+        ]);
       }
     }
     

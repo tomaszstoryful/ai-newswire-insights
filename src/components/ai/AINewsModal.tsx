@@ -98,7 +98,7 @@ const AINewsModal: React.FC<AINewsModalProps> = ({ open, onClose, initialMessage
     if (relatedNewsResults.length === 0) return null;
     
     return (
-      <div className="mt-4 w-full animate-in fade-in-50 slide-in-from-bottom-3 duration-300">
+      <div className="mt-4 w-full animate-in fade-in-50 slide-in-from-bottom-3 duration-300 news-card-animate">
         <div className="mb-2 text-sm font-medium">Top Stories:</div>
         <div className="relative">
           {relatedNewsResults.length > 1 && (
@@ -121,7 +121,8 @@ const AINewsModal: React.FC<AINewsModalProps> = ({ open, onClose, initialMessage
                 key={`story-${story.id}-${i}`}
                 to={`/story/${story.slug}`}
                 onClick={handleNewsCardClick}
-                className="flex-shrink-0 w-[280px] bg-white rounded-lg shadow-md border border-newswire-lightGray overflow-hidden hover:shadow-lg transition-all duration-200 hover:scale-[1.02]"
+                className="flex-shrink-0 w-[280px] bg-white rounded-lg shadow-md border border-newswire-lightGray overflow-hidden hover:shadow-lg transition-all duration-200 hover:scale-[1.02] news-card-animate"
+                style={{ animationDelay: `${i * 150}ms` }}
               >
                 <div className="h-36 bg-newswire-lightGray overflow-hidden">
                   {story.lead_image && (
@@ -233,19 +234,13 @@ const AINewsModal: React.FC<AINewsModalProps> = ({ open, onClose, initialMessage
                       ) : (
                         <MessageContent content={message.content} type="text" />
                       )}
+                      
+                      {/* Render news results directly after the message */}
+                      {message.role === 'assistant' && 
+                       message.content.includes('Here are some relevant news stories I found') && 
+                       renderNewsStories(index)}
                     </div>
                   </div>
-                ))}
-                
-                {/* Render news stories after each message */}
-                {messages.map((message, index) => (
-                  message.role === 'assistant' && message.content.includes('Here are some relevant news stories I found') ? (
-                    <div key={`news-${message.id}`} className="flex justify-start">
-                      <div className="max-w-[85%] w-full">
-                        {renderNewsStories(index)}
-                      </div>
-                    </div>
-                  ) : null
                 ))}
                 
                 {isGenerating && (
