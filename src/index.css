@@ -59,6 +59,50 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+  
+  /* Animation utilities */
+  .animate-in {
+    animation-duration: 300ms;
+    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: transform, opacity;
+  }
+  
+  .fade-in-50 {
+    animation-name: fadeIn50;
+  }
+  
+  .slide-in-from-bottom-3 {
+    animation-name: slideInFromBottom3;
+  }
+  
+  .zoom-in-90 {
+    animation-name: zoomIn90;
+  }
+  
+  @keyframes fadeIn50 {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  @keyframes slideInFromBottom3 {
+    from { transform: translateY(3%); }
+    to { transform: translateY(0); }
+  }
+  
+  @keyframes zoomIn90 {
+    from { 
+      opacity: 0;
+      transform: scale(0.9);
+    }
+    to { 
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  
+  .duration-300 {
+    animation-duration: 300ms;
+  }
 }
 
 .font-display {

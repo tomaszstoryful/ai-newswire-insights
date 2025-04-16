@@ -11,6 +11,7 @@ import { useAIChat } from '@/hooks/useAIChat';
 import { formatDate } from '@/lib/utils';
 import { NewsStory } from '@/types/news';
 import { Link } from 'react-router-dom';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface AINewsModalProps {
   open: boolean;
@@ -34,7 +35,7 @@ const AINewsModal: React.FC<AINewsModalProps> = ({ open, onClose, initialMessage
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages]);
+  }, [messages, isGenerating]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,149 +93,170 @@ const AINewsModal: React.FC<AINewsModalProps> = ({ open, onClose, initialMessage
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent className="max-w-4xl w-full h-[90vh] p-0" onEscapeKeyDown={onClose}>
-        <div className="flex flex-col h-full">
+      <DialogContent 
+        className="w-full h-full max-w-none p-0 m-0 border-none rounded-none animate-in zoom-in-90 duration-300"
+        style={{ 
+          position: 'fixed', 
+          top: 0, 
+          left: 0, 
+          right: 0, 
+          bottom: 0,
+          transform: 'translate(0, 0)'
+        }}
+        onEscapeKeyDown={onClose}
+      >
+        <div className="flex flex-col h-full bg-white">
           {/* Header */}
-          <div className="border-b border-newswire-lightGray p-4 flex justify-between items-center bg-gradient-to-r from-newswire-accent/20 to-transparent">
+          <div className="border-b border-newswire-lightGray p-4 flex justify-between items-center bg-gradient-to-r from-newswire-accent/20 to-transparent sticky top-0 z-10">
             <div className="flex items-center">
               <Bot size={20} className="text-newswire-accent mr-2" />
               <h2 className="text-xl font-display font-bold">Newswire AI Assistant</h2>
             </div>
-            <Button variant="ghost" size="icon" onClick={onClose}>
+            <Button variant="ghost" size="icon" onClick={onClose} className="hover:bg-newswire-lightGray/50 transition-colors">
               <X size={18} />
             </Button>
           </div>
           
           {/* Chat Area */}
-          <div className="flex-grow overflow-y-auto p-4 space-y-4">
-            {messages.map((message, index) => (
-              <div 
-                key={index} 
-                className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
+          <ScrollArea className="flex-grow p-4 space-y-4 overflow-y-auto">
+            <div className="space-y-6 max-w-5xl mx-auto">
+              {messages.map((message, index) => (
                 <div 
-                  className={`max-w-[85%] ${
-                    message.role === 'user' 
-                      ? 'bg-newswire-accent text-white rounded-tl-xl rounded-tr-xl rounded-bl-xl p-3'
-                      : 'bg-newswire-lightGray rounded-tl-xl rounded-tr-xl rounded-br-xl p-3'
-                  }`}
+                  key={index} 
+                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in-50 slide-in-from-bottom-3 duration-300`}
+                  style={{ animationDelay: `${index * 50}ms` }}
                 >
-                  {message.role === 'assistant' && message.content.includes('```python') ? (
-                    <>
-                      <MessageContent 
-                        content={message.content.split('```python')[0]} 
-                        type="text" 
-                      />
-                      <MessageContent 
-                        content={message.content.split('```python')[1].split('```')[0]} 
-                        type="code" 
-                      />
-                      {message.content.split('```')[2] && (
+                  <div 
+                    className={`max-w-[85%] ${
+                      message.role === 'user' 
+                        ? 'bg-newswire-accent text-white rounded-tl-xl rounded-tr-xl rounded-bl-xl p-3 shadow-sm'
+                        : 'bg-newswire-lightGray rounded-tl-xl rounded-tr-xl rounded-br-xl p-3 shadow-sm'
+                    }`}
+                  >
+                    {message.role === 'assistant' && message.content.includes('```python') ? (
+                      <>
                         <MessageContent 
-                          content={message.content.split('```')[2]} 
+                          content={message.content.split('```python')[0]} 
                           type="text" 
                         />
-                      )}
-                    </>
-                  ) : (
-                    <MessageContent content={message.content} type="text" />
-                  )}
-                  
-                  {/* Render news stories for this message */}
-                  {message.role === 'assistant' && newsResults.length > 0 && 
-                   newsResults[0].messageIndex === index && (
-                    <div className="mt-4">
-                      <div className="mb-2 text-sm font-medium">Top Stories:</div>
-                      <div className="relative">
-                        <button 
-                          onClick={scrollLeft}
-                          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/80 hover:bg-white rounded-full p-1 shadow"
-                        >
-                          <ChevronLeft size={20} />
-                        </button>
-                        
-                        <div 
-                          ref={scrollContainerRef}
-                          className="flex overflow-x-auto gap-4 py-2 px-6 hide-scrollbar"
-                          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-                        >
-                          {newsResults.map((story, i) => (
-                            <Link 
-                              key={i} 
-                              to={`/story/${story.slug}`}
-                              onClick={handleNewsCardClick}
-                              className="flex-shrink-0 w-[260px] bg-white rounded-lg shadow border border-newswire-lightGray overflow-hidden hover:shadow-md transition-shadow"
-                            >
-                              <div className="h-32 bg-newswire-lightGray overflow-hidden">
-                                {story.lead_image && (
-                                  <img 
-                                    src={story.lead_image.url}
-                                    alt={story.title}
-                                    className="w-full h-full object-cover"
-                                  />
-                                )}
-                              </div>
-                              <div className="p-3">
-                                <h4 className="font-medium text-sm line-clamp-2 mb-1">
-                                  {story.title}
-                                </h4>
-                                <div className="flex justify-between items-center">
-                                  <span className="text-xs text-newswire-mediumGray">
-                                    {formatDate(story.published_date)}
-                                  </span>
-                                  {story.clearance_mark && (
-                                    <Badge 
-                                      variant="outline" 
-                                      className="text-[9px] h-4 px-1.5 border-newswire-accent text-newswire-accent"
-                                    >
-                                      {story.clearance_mark}
-                                    </Badge>
+                        <MessageContent 
+                          content={message.content.split('```python')[1].split('```')[0]} 
+                          type="code" 
+                        />
+                        {message.content.split('```')[2] && (
+                          <MessageContent 
+                            content={message.content.split('```')[2]} 
+                            type="text" 
+                          />
+                        )}
+                      </>
+                    ) : (
+                      <MessageContent content={message.content} type="text" />
+                    )}
+                    
+                    {/* Render news stories for this message */}
+                    {message.role === 'assistant' && newsResults.length > 0 && 
+                    newsResults[0].messageIndex === index && (
+                      <div className="mt-4 animate-in fade-in-50 slide-in-from-bottom-3 duration-300">
+                        <div className="mb-2 text-sm font-medium">Top Stories:</div>
+                        <div className="relative">
+                          <button 
+                            onClick={scrollLeft}
+                            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/80 hover:bg-white rounded-full p-1 shadow-md transition-all"
+                            aria-label="Scroll left"
+                          >
+                            <ChevronLeft size={20} />
+                          </button>
+                          
+                          <div 
+                            ref={scrollContainerRef}
+                            className="flex overflow-x-auto gap-4 py-2 px-6 hide-scrollbar"
+                            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                          >
+                            {newsResults.map((story, i) => (
+                              <Link 
+                                key={i} 
+                                to={`/story/${story.slug}`}
+                                onClick={handleNewsCardClick}
+                                className="flex-shrink-0 w-[280px] bg-white rounded-lg shadow-md border border-newswire-lightGray overflow-hidden hover:shadow-lg transition-all duration-200 hover:scale-[1.02]"
+                              >
+                                <div className="h-36 bg-newswire-lightGray overflow-hidden">
+                                  {story.lead_image && (
+                                    <img 
+                                      src={story.lead_image.url}
+                                      alt={story.title}
+                                      className="w-full h-full object-cover"
+                                    />
                                   )}
                                 </div>
-                              </div>
-                            </Link>
-                          ))}
+                                <div className="p-3">
+                                  <h4 className="font-medium text-sm line-clamp-2 mb-1">
+                                    {story.title}
+                                  </h4>
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-xs text-newswire-mediumGray">
+                                      {formatDate(story.published_date)}
+                                    </span>
+                                    {story.clearance_mark && (
+                                      <Badge 
+                                        variant="outline" 
+                                        className="text-[9px] h-4 px-1.5 border-newswire-accent text-newswire-accent"
+                                      >
+                                        {story.clearance_mark}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </div>
+                              </Link>
+                            ))}
+                          </div>
+                          
+                          <button 
+                            onClick={scrollRight}
+                            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/80 hover:bg-white rounded-full p-1 shadow-md transition-all"
+                            aria-label="Scroll right"
+                          >
+                            <ChevronRight size={20} />
+                          </button>
                         </div>
-                        
-                        <button 
-                          onClick={scrollRight}
-                          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/80 hover:bg-white rounded-full p-1 shadow"
-                        >
-                          <ChevronRight size={20} />
-                        </button>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
-            
-            {isGenerating && (
-              <div className="flex justify-start">
-                <div className="max-w-[85%] bg-newswire-lightGray rounded-tl-xl rounded-tr-xl rounded-br-xl p-3">
-                  <MessageContent type="loading" content="" />
+              ))}
+              
+              {isGenerating && (
+                <div className="flex justify-start animate-in fade-in-50 slide-in-from-bottom-3 duration-300">
+                  <div className="max-w-[85%] bg-newswire-lightGray rounded-tl-xl rounded-tr-xl rounded-br-xl p-3 shadow-sm">
+                    <MessageContent type="loading" content="" />
+                  </div>
                 </div>
-              </div>
-            )}
-            
-            <div ref={messagesEndRef} />
-          </div>
+              )}
+              
+              <div ref={messagesEndRef} />
+            </div>
+          </ScrollArea>
           
           {/* Input Area */}
-          <div className="border-t border-newswire-lightGray p-4 bg-white">
-            <form onSubmit={handleSubmit} className="flex gap-2">
+          <div className="border-t border-newswire-lightGray p-4 bg-white sticky bottom-0 z-10">
+            <form onSubmit={handleSubmit} className="flex gap-2 max-w-5xl mx-auto">
               <Input
                 placeholder="Ask about news trends, data analysis, or search for stories..."
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                className="flex-grow"
+                className="flex-grow shadow-sm"
+                autoFocus
               />
-              <Button type="submit" disabled={isGenerating}>
+              <Button 
+                type="submit" 
+                disabled={isGenerating}
+                className="bg-newswire-accent hover:bg-newswire-accent/90 text-white transition-colors"
+              >
                 <MessageSquare size={16} className="mr-1" />
                 Send
               </Button>
             </form>
-            <div className="mt-2 text-xs text-newswire-mediumGray">
+            <div className="mt-2 text-xs text-newswire-mediumGray text-center max-w-5xl mx-auto">
               <span>The AI can analyze news data with Python code and display interactive results.</span>
             </div>
           </div>

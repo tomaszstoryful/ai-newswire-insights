@@ -194,7 +194,7 @@ const AIOverviewSection: React.FC<AIOverviewSectionProps> = ({ story, isStoryDet
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
               />
-              <Button type="submit" className="bg-newswire-black text-white hover:bg-newswire-darkGray">
+              <Button type="submit" className="bg-newswire-black text-white hover:bg-newswire-darkGray transition-colors">
                 <Send size={16} />
               </Button>
             </form>
