@@ -1,15 +1,41 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar } from 'lucide-react';
+import { Calendar, Clock, Check, AlertTriangle } from 'lucide-react';
 import { NewsStory } from '@/types/news';
-import { formatDate } from '@/lib/utils';
+import { formatDate, formatTimeAgo } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 interface FeaturedStoryProps {
   story: NewsStory;
 }
 
 const FeaturedStory: React.FC<FeaturedStoryProps> = ({ story }) => {
+  const getClearanceBadge = (clearance: string) => {
+    switch (clearance) {
+      case 'LICENSED':
+        return (
+          <Badge className="bg-emerald-500 hover:bg-emerald-600 text-white flex items-center gap-1">
+            <Check size={12} />
+            LICENSED
+          </Badge>
+        );
+      case 'RESTRICTED':
+        return (
+          <Badge className="bg-amber-500 hover:bg-amber-600 text-white flex items-center gap-1">
+            <AlertTriangle size={12} />
+            RESTRICTED
+          </Badge>
+        );
+      default:
+        return (
+          <Badge className="bg-blue-500 hover:bg-blue-600 text-white flex items-center gap-1">
+            PUBLIC
+          </Badge>
+        );
+    }
+  };
+
   return (
     <div className="border-b border-newswire-lightGray pb-8 mb-8">
       <Link to={`/story/${story.slug}`}>
@@ -18,10 +44,21 @@ const FeaturedStory: React.FC<FeaturedStoryProps> = ({ story }) => {
             <h1 className="text-3xl md:text-4xl font-display font-bold leading-tight mb-4">
               {story.title}
             </h1>
-            <div className="flex items-center text-xs text-newswire-mediumGray mb-3">
-              <Calendar size={14} className="mr-1" />
-              <span>{formatDate(story.published_date)}</span>
+            
+            <div className="flex items-center space-x-4 mb-3">
+              <div className="flex items-center text-xs text-newswire-mediumGray">
+                <Calendar size={14} className="mr-1" />
+                <span>{formatDate(story.published_date)}</span>
+              </div>
+              <div className="flex items-center text-xs text-newswire-mediumGray">
+                <Clock size={14} className="mr-1" />
+                <span>{formatTimeAgo(story.published_date)}</span>
+              </div>
+              <div>
+                {getClearanceBadge(story.clearance_mark)}
+              </div>
             </div>
+            
             <p className="text-newswire-darkGray leading-relaxed mb-4">
               {story.summary.substring(0, 200)}...
             </p>
