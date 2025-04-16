@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
@@ -285,8 +284,8 @@ const StoryDetail = () => {
               
               <Separator className="my-8" />
               
-              {/* AI Overview Section */}
-              <AIOverviewSection story={story} />
+              {/* AI Overview Section - now with isStoryDetail=true */}
+              <AIOverviewSection story={story} isStoryDetail={true} />
             </div>
           </div>
           
