@@ -1,7 +1,5 @@
-
 import React, { useEffect, useState } from 'react';
 import Layout from '@/components/layout/Layout';
-import FeaturedVideo from '@/components/news/FeaturedStory';
 import VideoCard from '@/components/news/NewsCard';
 import { NewsStory } from '@/types/news';
 import { getTopStories } from '@/services/newsService';
@@ -79,10 +77,10 @@ const Index = () => {
           </div>
         </div>
         
-        {/* AI Overview Section */}
+        {/* AI Insights Section */}
         {featuredVideo && <AIOverviewSection story={featuredVideo} />}
         
-        {/* All Videos */}
+        {/* Available Videos */}
         <div className="mb-12">
           <h2 className="text-2xl font-display font-bold mb-6 pb-2 border-b-2 border-newswire-lightGray">
             Available Videos

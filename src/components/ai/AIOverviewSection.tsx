@@ -1,37 +1,33 @@
 
 import React, { useState } from 'react';
-import { Bot, MessageSquare, RefreshCw, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { Bot, MessageSquare, Send, Link, ExternalLink, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AIOverview, AIMessage, NewsStory } from '@/types/news';
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { AIMessage, NewsStory } from '@/types/news';
 
 interface AIOverviewSectionProps {
   story: NewsStory;
 }
 
 const AIOverviewSection: React.FC<AIOverviewSectionProps> = ({ story }) => {
-  const [activeTab, setActiveTab] = useState('overview');
   const [inputValue, setInputValue] = useState('');
   const [messages, setMessages] = useState<AIMessage[]>([]);
-  const [overview, setOverview] = useState<AIOverview>({
-    summary: "A dog was rescued by firefighters in Hartford, Connecticut after escaping through an attic window onto the roof of a 2.5-story home. Video footage captured the rescue operation, which occurred around 3:45 pm on April 13. According to officials, the dog was safely retrieved using a ladder truck and suffered no injuries during the incident. District Chief Mario Oquendo Jr. joked about offering the dog a job due to its climbing abilities and comfort on the roof.",
-    keyPoints: [
-      "Incident occurred on April 13, 2025 in Hartford, Connecticut",
-      "Dog escaped through an open attic window onto the main roof",
-      "Hartford Fire Department responded and safely rescued the dog",
-      "The rescue was captured on video by a witness",
-      "The dog suffered no injuries during the incident"
-    ],
-    relatedTopics: [
-      "Pet Safety",
-      "Urban Animal Rescues",
-      "Emergency Response",
-      "Firefighter Operations",
-      "Animal Behavior"
-    ]
-  });
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  // Sample trending news data
+  const trendingTopics = [
+    { id: 1, title: "Climate Crisis", count: 43, change: "+12%" },
+    { id: 2, title: "Tech Innovations", count: 38, change: "+8%" },
+    { id: 3, title: "Global Conflicts", count: 31, change: "-3%" },
+  ];
+
+  const keyHighlights = [
+    { id: 1, title: "Animal Rescues Surge", link: "/category/animal-rescues" },
+    { id: 2, title: "Natural Disaster Coverage", link: "/category/disasters" },
+    { id: 3, title: "Technological Breakthroughs", link: "/category/technology" },
+  ];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,141 +41,150 @@ const AIOverviewSection: React.FC<AIOverviewSectionProps> = ({ story }) => {
       
       setMessages([...messages, newUserMessage]);
       setInputValue('');
+      setIsGenerating(true);
       
       // Simulate AI response after a short delay
       setTimeout(() => {
         const aiResponse: AIMessage = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
-          content: `This is a simulated response about "${story.title}" related to your query. In a real implementation, this would be connected to Perplexity or another AI service to provide relevant information.`,
+          content: `Based on our news archive analysis, I found 28 similar animal rescue stories from the past month. Emergency responders have been involved in animal rescues 37% more often in urban areas compared to last year. Would you like to see licensing options for similar content?`,
           timestamp: new Date(),
         };
         setMessages(prev => [...prev, aiResponse]);
-      }, 1000);
+        setIsGenerating(false);
+      }, 1500);
     }
   };
 
   return (
-    <Card className="border border-newswire-lightGray shadow-sm">
-      <CardHeader className="bg-newswire-lightGray/50 pb-2">
-        <CardTitle className="text-lg font-medium flex items-center">
-          <Bot size={20} className="mr-2" />
-          AI Insights
-        </CardTitle>
-      </CardHeader>
-      <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <div className="border-b border-newswire-lightGray">
-          <TabsList className="bg-transparent border-b-0 h-auto p-0">
-            <TabsTrigger 
-              value="overview" 
-              className={`px-4 py-2 border-b-2 font-medium text-sm rounded-none ${
-                activeTab === 'overview' 
-                  ? 'border-newswire-black text-newswire-black' 
-                  : 'border-transparent text-newswire-mediumGray'
-              }`}
-            >
-              Overview
-            </TabsTrigger>
-            <TabsTrigger 
-              value="chat" 
-              className={`px-4 py-2 border-b-2 font-medium text-sm rounded-none ${
-                activeTab === 'chat' 
-                  ? 'border-newswire-black text-newswire-black' 
-                  : 'border-transparent text-newswire-mediumGray'
-              }`}
-            >
-              Ask AI
-            </TabsTrigger>
-          </TabsList>
+    <Card className="border border-newswire-lightGray shadow-md mb-8">
+      <div className="bg-gradient-to-r from-newswire-accent/10 to-transparent p-6">
+        <div className="flex items-center mb-4">
+          <Bot size={24} className="text-newswire-accent mr-3" />
+          <h2 className="text-2xl font-display font-bold">AI News Intelligence</h2>
         </div>
         
-        <TabsContent value="overview" className="p-4 mt-0">
-          <div className="space-y-4">
-            <div>
-              <h4 className="font-medium mb-2">Summary</h4>
-              <p className="text-sm text-newswire-darkGray">{overview.summary}</p>
+        <div className="grid md:grid-cols-3 gap-6 mb-6">
+          <div className="col-span-2">
+            <h3 className="font-medium text-sm uppercase text-newswire-mediumGray mb-2">Last 24 Hours Media Insights</h3>
+            <div className="prose prose-sm max-w-none">
+              <p className="text-base">
+                <span className="font-semibold">432 new video stories</span> were added to our platform in the last 24 hours, 
+                with <span className="font-semibold">86 featuring animal-related content</span> similar to the dog rescue. 
+                Animal rescue stories have seen a <span className="text-green-600 font-semibold">28% increase in licensing requests</span> compared 
+                to previous weeks, making them particularly valuable for media outlets.
+              </p>
             </div>
             
-            <div>
-              <h4 className="font-medium mb-2">Key Points</h4>
-              <ul className="text-sm text-newswire-darkGray space-y-1 list-disc pl-5">
-                {overview.keyPoints.map((point, index) => (
-                  <li key={index}>{point}</li>
+            <div className="mt-4 space-y-3">
+              <h3 className="font-medium text-sm uppercase text-newswire-mediumGray">Key Events Worth Licensing</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {keyHighlights.map(highlight => (
+                  <a 
+                    key={highlight.id} 
+                    href={highlight.link} 
+                    className="flex items-center p-2 hover:bg-newswire-lightGray/50 rounded group"
+                  >
+                    <Link size={16} className="mr-2 text-newswire-accent" />
+                    <span className="text-sm font-medium">{highlight.title}</span>
+                    <ExternalLink size={14} className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity text-newswire-mediumGray" />
+                  </a>
                 ))}
-              </ul>
-            </div>
-            
-            <div>
-              <h4 className="font-medium mb-2">Related Topics</h4>
-              <div className="flex flex-wrap gap-2">
-                {overview.relatedTopics.map((topic, index) => (
-                  <span key={index} className="bg-newswire-lightGray px-2 py-1 text-xs rounded">
-                    {topic}
-                  </span>
-                ))}
-              </div>
-            </div>
-            
-            <div className="flex justify-between items-center text-xs text-newswire-mediumGray pt-2 border-t border-newswire-lightGray">
-              <div className="flex items-center">
-                <button className="flex items-center hover:text-newswire-black mr-4">
-                  <RefreshCw size={14} className="mr-1" />
-                  Refresh
-                </button>
-                <span>Generated on {new Date().toLocaleDateString()}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <button className="hover:text-newswire-black">
-                  <ThumbsUp size={14} />
-                </button>
-                <button className="hover:text-newswire-black">
-                  <ThumbsDown size={14} />
-                </button>
               </div>
             </div>
           </div>
-        </TabsContent>
-        
-        <TabsContent value="chat" className="mt-0 flex flex-col h-96">
-          <div className="flex-grow overflow-y-auto p-4 space-y-4">
-            {messages.length === 0 ? (
-              <div className="text-center text-newswire-mediumGray py-8">
-                <MessageSquare size={24} className="mx-auto mb-2" />
-                <p>Ask questions about this article or related topics</p>
-              </div>
-            ) : (
-              messages.map((message) => (
-                <div 
-                  key={message.id} 
-                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div 
-                    className={`max-w-[80%] p-3 rounded-lg ${
-                      message.role === 'user' 
-                        ? 'bg-newswire-accent text-white' 
-                        : 'bg-newswire-lightGray text-newswire-black'
-                    }`}
-                  >
-                    {message.content}
+          
+          <div>
+            <h3 className="font-medium text-sm uppercase text-newswire-mediumGray mb-2">Trending Topics</h3>
+            <div className="space-y-3">
+              {trendingTopics.map(topic => (
+                <div key={topic.id} className="flex justify-between items-center p-2 border-b border-newswire-lightGray last:border-0">
+                  <span className="text-sm font-medium">{topic.title}</span>
+                  <div className="flex flex-col items-end">
+                    <span className="text-sm font-bold">{topic.count} stories</span>
+                    <span className={`text-xs ${topic.change.startsWith('+') ? 'text-green-600' : 'text-red-600'}`}>
+                      {topic.change}
+                    </span>
                   </div>
                 </div>
-              ))
+              ))}
+            </div>
+          </div>
+        </div>
+        
+        <div className="mt-6 border-t border-newswire-lightGray pt-4">
+          <div className="flex items-center mb-3">
+            <MessageSquare size={18} className="mr-2 text-newswire-accent" />
+            <h3 className="font-medium">Ask about these insights or explore licensing options</h3>
+          </div>
+          
+          <div className="mb-3 max-h-[200px] overflow-y-auto">
+            {messages.length > 0 ? (
+              <div className="space-y-3">
+                {messages.map((message) => (
+                  <div 
+                    key={message.id} 
+                    className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div 
+                      className={`max-w-[80%] p-3 rounded-lg ${
+                        message.role === 'user' 
+                          ? 'bg-newswire-accent text-white' 
+                          : 'bg-newswire-lightGray/70 text-newswire-black'
+                      }`}
+                    >
+                      {message.content}
+                    </div>
+                  </div>
+                ))}
+                
+                {isGenerating && (
+                  <div className="flex justify-start">
+                    <div className="max-w-[80%] p-3 rounded-lg bg-newswire-lightGray/70">
+                      <div className="flex space-x-2">
+                        <Skeleton className="h-3 w-3 rounded-full bg-newswire-mediumGray/30" />
+                        <Skeleton className="h-3 w-3 rounded-full bg-newswire-mediumGray/30" />
+                        <Skeleton className="h-3 w-3 rounded-full bg-newswire-mediumGray/30" />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-sm text-newswire-mediumGray bg-newswire-lightGray/50 p-3 rounded-lg">
+                Ask questions about recent news trends, content licensing options, or specific details about available footage.
+              </div>
             )}
           </div>
           
-          <form onSubmit={handleSubmit} className="border-t border-newswire-lightGray p-3 flex gap-2">
+          <form onSubmit={handleSubmit} className="flex gap-2">
             <Input
               className="flex-grow"
-              placeholder="Ask about this article..."
+              placeholder="Ask about news trends or licensing options..."
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
             />
             <Button type="submit" className="bg-newswire-black text-white hover:bg-newswire-darkGray">
-              Ask
+              <Send size={16} />
             </Button>
           </form>
-        </TabsContent>
-      </Tabs>
+        </div>
+        
+        <div className="flex justify-between items-center text-xs text-newswire-mediumGray mt-4 pt-2">
+          <span>Generated on {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+          <div className="flex items-center gap-2">
+            <button className="hover:text-newswire-black flex items-center">
+              <ThumbsUp size={14} className="mr-1" />
+              <span>Helpful</span>
+            </button>
+            <button className="hover:text-newswire-black flex items-center">
+              <ThumbsDown size={14} className="mr-1" />
+              <span>Not helpful</span>
+            </button>
+          </div>
+        </div>
+      </div>
     </Card>
   );
 };
