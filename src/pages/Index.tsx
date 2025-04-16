@@ -62,7 +62,7 @@ const Index = () => {
         
         {/* Available Videos */}
         <div className="mb-12 flex justify-between items-center">
-          <h2 className="text-2xl font-display font-bold pb-2 border-b-2 border-newswire-lightGray">
+          <h2 className="text-2xl font-display font-bold">
             Available Videos
           </h2>
           <div className="flex items-center space-x-3">
