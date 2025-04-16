@@ -80,30 +80,39 @@ export const useAIChat = (initialMessage: string = '') => {
       // Execute simulated Python code
       const pythonResult = await simulatePythonExecution(userMessage);
       
-      const newsStoriesMessage = needsNewsResults ? 
-        '\n\nHere are some relevant news stories I found:' : '';
+      // Update message with Python code result
+      const updatedContent = responseContent + `\n\n\`\`\`python\n${pythonResult.code}\n\`\`\`\n\nExecuting the code...\n\n${pythonResult.result}`;
       
       const updatedMessage = {
         ...initialResponse,
-        content: responseContent + `\n\n\`\`\`python\n${pythonResult.code}\n\`\`\`\n\nExecuting the code...\n\n${pythonResult.result}${newsStoriesMessage}`
+        content: updatedContent
       };
       
       setMessages(prev => prev.map(msg => 
         msg.id === initialResponse.id ? updatedMessage : msg
       ));
       
-      // If news results are needed, fetch them
+      // If news results are needed, fetch and add them in a separate message
       if (needsNewsResults) {
         // Fetch news stories
         const newsStories = await simulateNewsSearch(userMessage);
         
-        // Store these stories with the current message index for proper display
-        const messageIndex = messages.length;
+        // Create a new message for news stories
+        const newsMessage: AIMessage = {
+          id: Date.now().toString(),
+          role: 'assistant',
+          content: 'Here are some relevant news stories I found:',
+          timestamp: new Date(),
+        };
+        
+        setMessages(prev => [...prev, newsMessage]);
+        
+        // Store these stories with the current message index
         setNewsResults(prev => [
           ...prev,
           ...newsStories.map(story => ({
             ...story,
-            messageIndex: messageIndex // Associate with the AI response message
+            messageIndex: messages.length + 1 // +1 because we've already added the Python results message
           }))
         ]);
       }
@@ -145,25 +154,25 @@ export const useAIChat = (initialMessage: string = '') => {
       
       // For simple requests, also check if news results are needed
       if (needsNewsResults) {
-        // Update the message to indicate news stories
-        const newsStoriesMessage = '\n\nHere are some relevant news stories I found:';
-        const updatedContent = aiResponse.content + newsStoriesMessage;
-        
-        setMessages(prev => prev.map(msg => 
-          msg.id === aiResponse.id ? {...msg, content: updatedContent} : msg
-        ));
-        
-        // Fetch news stories after a brief delay
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // Fetch news stories 
         const newsStories = await simulateNewsSearch(userMessage);
         
-        // Store these stories with the current message index
-        const messageIndex = messages.length;
+        // Create a new message for news stories
+        const newsMessage: AIMessage = {
+          id: Date.now().toString(),
+          role: 'assistant',
+          content: 'Here are some relevant news stories I found:',
+          timestamp: new Date(),
+        };
+        
+        setMessages(prev => [...prev, newsMessage]);
+        
+        // Store these stories with the new message index
         setNewsResults(prev => [
           ...prev,
           ...newsStories.map(story => ({
             ...story,
-            messageIndex: messageIndex
+            messageIndex: messages.length + 1 // +1 because we've already added the first response
           }))
         ]);
       }

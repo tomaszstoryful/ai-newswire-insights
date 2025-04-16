@@ -1,10 +1,10 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Bot, MessageSquare, Code, ChevronRight, ChevronLeft, ExternalLink } from 'lucide-react';
+import { X, Bot, MessageSquare, Code, ChevronRight, ChevronLeft } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useAIChat } from '@/hooks/useAIChat';
 import { formatDate } from '@/lib/utils';
 import { Link } from 'react-router-dom';
@@ -99,7 +99,6 @@ const AINewsModal: React.FC<AINewsModalProps> = ({ open, onClose, initialMessage
     
     return (
       <div className="mt-4 w-full animate-in fade-in-50 slide-in-from-bottom-3 duration-300 news-card-animate">
-        <div className="mb-2 text-sm font-medium">Top Stories:</div>
         <div className="relative">
           {relatedNewsResults.length > 1 && (
             <button 
@@ -184,6 +183,9 @@ const AINewsModal: React.FC<AINewsModalProps> = ({ open, onClose, initialMessage
         onEscapeKeyDown={onClose}
       >
         <DialogTitle className="sr-only">Newswire AI Assistant</DialogTitle>
+        <DialogDescription className="sr-only">
+          Chat with the Newswire AI Assistant to analyze news data and find stories
+        </DialogDescription>
         <div className="flex flex-col h-full bg-white">
           {/* Header */}
           <div className="border-b border-newswire-lightGray p-4 flex justify-between items-center bg-gradient-to-r from-newswire-accent/20 to-transparent sticky top-0 z-10">
@@ -234,13 +236,18 @@ const AINewsModal: React.FC<AINewsModalProps> = ({ open, onClose, initialMessage
                       ) : (
                         <MessageContent content={message.content} type="text" />
                       )}
-                      
-                      {/* Render news results directly after the message */}
-                      {message.role === 'assistant' && 
-                       message.content.includes('Here are some relevant news stories I found') && 
-                       renderNewsStories(index)}
                     </div>
                   </div>
+                ))}
+                
+                {/* News results are now rendered directly after each relevant message */}
+                {messages.map((message, index) => (
+                  message.role === 'assistant' && 
+                  message.content.includes('Here are some relevant news stories I found') && (
+                    <div key={`news-${index}`} className="flex justify-start w-full">
+                      {renderNewsStories(index)}
+                    </div>
+                  )
                 ))}
                 
                 {isGenerating && (
