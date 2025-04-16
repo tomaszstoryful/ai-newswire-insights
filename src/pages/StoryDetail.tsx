@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
@@ -261,14 +260,6 @@ const StoryDetail = () => {
           <div className="lg:col-span-4">
             {/* Recommended Stories */}
             <RecommendedStories stories={recommendedStories} currentStoryId={story.id} />
-            
-            {/* Ad Space */}
-            <div className="mt-6 p-6 bg-newswire-lightGray/50 border border-newswire-lightGray text-center">
-              <div className="text-xs text-newswire-mediumGray uppercase mb-2">Advertisement</div>
-              <div className="aspect-square w-full bg-newswire-lightGray flex items-center justify-center">
-                <span className="text-newswire-mediumGray">Ad Space</span>
-              </div>
-            </div>
           </div>
         </div>
       </div>
