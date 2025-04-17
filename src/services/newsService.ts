@@ -1,3 +1,4 @@
+
 import { NewsStory, APIStoryResponse, APIStory } from '@/types/news';
 
 // Sample news data based on the provided JSON
@@ -378,7 +379,7 @@ export const fetchStoryById = async (storyId: string | number): Promise<{ story:
   console.log(`Fetching story with ID: ${storyId}`);
   
   try {
-    // Use the new API endpoint for individual stories
+    // Use the API endpoint for individual stories
     const apiUrl = `https://newswire-story-recommendation.staging.storyful.com/api/stories/${storyId}`;
     
     // Try different CORS proxy options
@@ -421,9 +422,9 @@ export const fetchStoryById = async (storyId: string | number): Promise<{ story:
     const mainStory = transformAPIStoryToNewsStory(apiResponse.story);
     
     // Transform similar stories
-    const similarStories = apiResponse.similar_stories.map(story => 
+    const similarStories = apiResponse.similar_stories?.map(story => 
       transformAPIStoryToNewsStory(story)
-    ).filter(Boolean);
+    ).filter(Boolean) || [];
     
     console.log('Transformed story:', mainStory);
     console.log(`Transformed ${similarStories.length} similar stories`);
@@ -453,9 +454,9 @@ export const fetchStoryById = async (storyId: string | number): Promise<{ story:
         
         // Use the same transformation code as above
         const mainStory = transformAPIStoryToNewsStory(apiResponse.story);
-        const similarStories = apiResponse.similar_stories.map((story: APIStory) => 
+        const similarStories = apiResponse.similar_stories?.map((story: APIStory) => 
           transformAPIStoryToNewsStory(story)
-        ).filter(Boolean);
+        ).filter(Boolean) || [];
         
         return { 
           story: mainStory,
@@ -468,6 +469,14 @@ export const fetchStoryById = async (storyId: string | number): Promise<{ story:
     
     // If no API data, fallback to mock data
     console.log('Falling back to mock data for story');
+    const mockStory = mockStories.find(s => s.id.toString() === storyId.toString());
+    if (mockStory) {
+      const otherStories = mockStories.filter(s => s.id !== mockStory.id).slice(0, 4);
+      return { 
+        story: mockStory, 
+        similarStories: otherStories 
+      };
+    }
     return null;
   }
 };
@@ -490,18 +499,36 @@ export const getStoryBySlug = async (slug: string): Promise<NewsStory | undefine
   try {
     console.log(`Getting story by slug: ${slug}`);
     
-    // If the slug is a number ID, use it directly
+    // Check if the slug itself is a numeric ID
     if (/^\d+$/.test(slug)) {
+      console.log(`Slug "${slug}" is a numeric ID, fetching directly`);
       const result = await fetchStoryById(slug);
       if (result && result.story) {
         return result.story;
       }
     }
     
-    // Otherwise, extract ID from slug if possible (like US-TX might be title_slug for story ID 317273)
-    // First check if we can find the story in mock data
+    // Check if this is a title_slug format (like US-TX)
+    // First try to find a matching story from API
+    try {
+      const allStories = await fetchStoriesFromAPI();
+      const matchingStory = allStories.find(s => s.slug === slug);
+      
+      if (matchingStory) {
+        console.log(`Found matching story with slug "${slug}" from API, id: ${matchingStory.id}`);
+        const result = await fetchStoryById(matchingStory.id);
+        if (result && result.story) {
+          return result.story;
+        }
+      }
+    } catch (error) {
+      console.warn('Error trying to match slug to API stories:', error);
+    }
+    
+    // Try fetching from mock data
     const mockStory = mockStories.find(story => story.slug === slug);
     if (mockStory) {
+      console.log(`Found mock story with slug "${slug}", id: ${mockStory.id}`);
       try {
         // Try fetching the real data using the mock story's ID
         const result = await fetchStoryById(mockStory.id);
@@ -514,8 +541,8 @@ export const getStoryBySlug = async (slug: string): Promise<NewsStory | undefine
       }
     }
     
-    // If couldn't match slug, fall back to mock data
-    return mockStories.find(story => story.slug === slug);
+    console.warn(`No story found with slug: ${slug}`);
+    return undefined;
   } catch (error) {
     console.error('Error in getStoryBySlug:', error);
     return mockStories.find(story => story.slug === slug);
@@ -527,13 +554,16 @@ export const getRecommendedStories = async (storyId?: number): Promise<NewsStory
   try {
     if (storyId) {
       // Try to get similar stories from the API
+      console.log(`Fetching recommended stories for story ID: ${storyId}`);
       const result = await fetchStoryById(storyId);
       if (result && result.similarStories && result.similarStories.length > 0) {
+        console.log(`Found ${result.similarStories.length} similar stories from API`);
         return result.similarStories;
       }
     }
     
     // Fallback to mock data
+    console.log('Using mock data for recommended stories');
     const filtered = storyId 
       ? mockStories.filter(story => story.id !== storyId)
       : mockStories;

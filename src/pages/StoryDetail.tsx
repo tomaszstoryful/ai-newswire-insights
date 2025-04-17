@@ -1,11 +1,12 @@
+
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import AIOverviewSection from '@/components/ai/AIOverviewSection';
 import RecommendedStories from '@/components/news/RecommendedStories';
 import { NewsStory } from '@/types/news';
 import { formatDate, formatTimeAgo, getRandomInt } from '@/lib/utils';
-import { getStoryBySlug, getRecommendedStories } from '@/services/newsService';
+import { getStoryBySlug, getRecommendedStories, fetchStoryById } from '@/services/newsService';
 import { Calendar, MapPin, Share2, Bookmark, Printer, Clock, FileText, Globe, Video, Check, AlertTriangle, Info, Download, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -17,6 +18,7 @@ import { toast } from '@/components/ui/use-toast';
 
 const StoryDetail = () => {
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
   const [story, setStory] = useState<NewsStory | null>(null);
   const [recommendedStories, setRecommendedStories] = useState<NewsStory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,15 +37,31 @@ const StoryDetail = () => {
         setError(null);
         console.log(`Fetching story with slug: ${slug}`);
         
-        const fetchedStory = await getStoryBySlug(slug);
+        let fetchedStory: NewsStory | undefined;
+        let similarStories: NewsStory[] = [];
+        
+        // Check if slug is a numeric ID
+        if (/^\d+$/.test(slug)) {
+          console.log(`Slug "${slug}" appears to be a numeric ID, fetching directly by ID`);
+          const result = await fetchStoryById(slug);
+          if (result) {
+            fetchedStory = result.story;
+            similarStories = result.similarStories;
+          }
+        } else {
+          // Try regular slug lookup
+          fetchedStory = await getStoryBySlug(slug);
+          
+          // If found, get recommended stories
+          if (fetchedStory) {
+            similarStories = await getRecommendedStories(fetchedStory.id);
+          }
+        }
         
         if (fetchedStory) {
           console.log('Successfully fetched story:', fetchedStory);
           setStory(fetchedStory);
-          
-          // Fetch recommended/similar stories
-          const recommended = await getRecommendedStories(fetchedStory.id);
-          setRecommendedStories(recommended);
+          setRecommendedStories(similarStories);
         } else {
           console.error('No story found for slug:', slug);
           setError('Story not found');
@@ -168,6 +186,12 @@ const StoryDetail = () => {
         <div className="container mx-auto px-4 md:px-6 py-16 text-center">
           <h1 className="text-3xl font-bold mb-4">Story Not Found</h1>
           <p>The story you're looking for doesn't exist or has been removed.</p>
+          <Button 
+            className="mt-6"
+            onClick={() => navigate('/')}
+          >
+            Return to Homepage
+          </Button>
         </div>
       </Layout>
     );

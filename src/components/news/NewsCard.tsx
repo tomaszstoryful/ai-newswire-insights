@@ -1,19 +1,22 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, Check, AlertTriangle, Clock, Play, Film, Download } from 'lucide-react';
-import { NewsStory } from '@/types/news';
-import { formatDate, formatTimeAgo, getRandomInt } from '@/lib/utils';
+import { Calendar, Clock, MapPin, Play, Lock, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { NewsStory } from '@/types/news';
+import { formatDate, getRandomInt } from '@/lib/utils';
 
 interface NewsCardProps {
   story: NewsStory;
-  size?: 'small' | 'medium' | 'large';
+  variant?: 'default' | 'compact' | 'featured';
 }
 
-const NewsCard: React.FC<NewsCardProps> = ({ story, size = 'medium' }) => {
-  // Generate a random video duration for demo purposes
-  const minutes = getRandomInt(1, 10);
+const NewsCard: React.FC<NewsCardProps> = ({ story, variant = 'default' }) => {
+  const isFeatured = variant === 'featured';
+  const isCompact = variant === 'compact';
+  
+  const minutes = getRandomInt(1, 15);
   const seconds = getRandomInt(10, 59);
   const durationString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
   
@@ -22,7 +25,7 @@ const NewsCard: React.FC<NewsCardProps> = ({ story, size = 'medium' }) => {
       case 'LICENSED':
         return (
           <Badge className="bg-emerald-500 hover:bg-emerald-600 text-white flex items-center gap-1">
-            <Check size={12} />
+            <ShieldCheck size={12} />
             LICENSED
           </Badge>
         );
@@ -36,7 +39,7 @@ const NewsCard: React.FC<NewsCardProps> = ({ story, size = 'medium' }) => {
       case 'CLEARED':
         return (
           <Badge className="bg-blue-500 hover:bg-blue-600 text-white flex items-center gap-1">
-            <Check size={12} />
+            <ShieldCheck size={12} />
             CLEARED
           </Badge>
         );
@@ -49,60 +52,72 @@ const NewsCard: React.FC<NewsCardProps> = ({ story, size = 'medium' }) => {
     }
   };
 
+  // Use ID-based route for story details to ensure proper loading
+  const storyLink = `/story/${story.id}`;
+
   return (
-    <Link to={`/story/${story.slug}`} className="group block h-full">
-      <div className="border border-gray-200 rounded-lg overflow-hidden transition-all duration-200 hover:shadow-md h-full bg-white hover:border-newswire-accent/30">
-        <div className={`relative aspect-video overflow-hidden bg-newswire-lightGray`}>
-          {story.lead_image && (
-            <img 
-              src={story.lead_image.url} 
-              alt={story.title} 
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-            />
-          )}
-          <div className="absolute top-3 left-3">
-            {getClearanceBadge(story.clearance_mark)}
-          </div>
-          <div className="absolute bottom-3 right-3 bg-black/70 text-white text-xs px-2 py-1 rounded-md flex items-center">
-            <Clock size={12} className="mr-1" />
-            {durationString}
-          </div>
-          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/30">
-            <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center">
-              <Play size={24} className="text-newswire-accent ml-1" />
+    <Card className={`overflow-hidden transition-all hover:shadow-md ${isFeatured ? 'md:flex h-full' : ''}`}>
+      <Link to={storyLink} className="block h-full">
+        <div className={`${isFeatured ? 'md:w-1/2 md:flex-shrink-0' : ''}`}>
+          <div className="relative aspect-video bg-newswire-lightGray">
+            {story.lead_image?.url ? (
+              <img 
+                src={story.lead_image.url} 
+                alt={story.title} 
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-newswire-lightGray">
+                <Play size={40} className="text-white/50" />
+              </div>
+            )}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-12 h-12 rounded-full bg-black/50 flex items-center justify-center">
+                <Play size={20} className="text-white ml-1" />
+              </div>
+            </div>
+            <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-md flex items-center">
+              <Clock size={10} className="mr-1" />
+              {durationString}
             </div>
           </div>
         </div>
-        <div className="p-5">
-          <h3 className={`font-serif font-semibold leading-tight group-hover:text-newswire-accent transition-colors ${
-            size === 'small' ? 'text-base' : size === 'medium' ? 'text-xl' : 'text-2xl'
-          }`}>
+        
+        <CardContent className={`p-4 ${isFeatured ? 'md:w-1/2 md:flex-grow' : ''}`}>
+          <div className="flex items-center justify-between mb-2 text-xs text-newswire-mediumGray">
+            <div className="flex items-center">
+              <Calendar size={12} className="mr-1" />
+              <span>{formatDate(story.published_date)}</span>
+            </div>
+            {getClearanceBadge(story.clearance_mark)}
+          </div>
+          
+          <h3 className={`font-display font-bold leading-tight mb-2 line-clamp-2 ${isFeatured ? 'text-xl md:text-2xl' : isCompact ? 'text-base' : 'text-lg'}`}>
             {story.title}
           </h3>
           
-          {size !== 'small' && (
-            <p className="text-newswire-darkGray text-sm line-clamp-2 mt-2 mb-3">
-              {story.summary.split('\n')[0]}
+          {!isCompact && (
+            <p className="text-newswire-mediumGray mb-3 line-clamp-2 text-sm">
+              {story.summary}
             </p>
           )}
           
-          <div className="flex flex-wrap items-center justify-between mt-3 pt-3 border-t border-gray-100">
-            <div className="flex items-center text-xs text-newswire-mediumGray">
-              <Calendar size={14} className="mr-1" />
-              <span>{formatDate(story.published_date)}</span>
-              <span className="mx-2">•</span>
-              <Film size={14} className="mr-1" />
-              <span>{story.lead_item?.resource_type || 'video'}</span>
-            </div>
-            <div className="flex items-center">
-              <button className="p-1 rounded-full hover:bg-newswire-lightGray/50 transition-colors">
-                <Download size={16} className="text-newswire-mediumGray" />
-              </button>
-            </div>
+          <div className="flex items-center text-xs text-newswire-mediumGray">
+            {story.stated_location && (
+              <div className="flex items-center mr-3">
+                <MapPin size={12} className="mr-1" />
+                <span>{story.stated_location}</span>
+              </div>
+            )}
+            {story.regions && story.regions.length > 0 && (
+              <div className="flex items-center">
+                <span>{story.regions[0]}</span>
+              </div>
+            )}
           </div>
-        </div>
-      </div>
-    </Link>
+        </CardContent>
+      </Link>
+    </Card>
   );
 };
 
