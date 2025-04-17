@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import StoryDetail from "./pages/StoryDetail";
 import NotFound from "./pages/NotFound";
+import AIAssistant from "./components/ai/AIAssistant";
 
 const queryClient = new QueryClient();
 

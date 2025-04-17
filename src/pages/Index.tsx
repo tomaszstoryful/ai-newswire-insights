@@ -7,6 +7,7 @@ import { getTopStories } from '@/services/newsService';
 import { Button } from '@/components/ui/button';
 import { Search, Filter } from 'lucide-react';
 import AIOverviewSection from '@/components/ai/AIOverviewSection';
+import AIAssistant from '@/components/ai/AIAssistant';
 
 const Index = () => {
   const [featuredVideo, setFeaturedVideo] = useState<NewsStory | null>(null);
@@ -88,6 +89,9 @@ const Index = () => {
           ))}
         </div>
       </div>
+
+      {/* AI Assistant with showAssistantButton set to false */}
+      <AIAssistant showAssistantButton={false} />
     </Layout>
   );
 };

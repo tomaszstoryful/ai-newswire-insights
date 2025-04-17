@@ -15,7 +15,11 @@ import {
 // Storage key for assistant chat
 const STORAGE_KEY = 'newswire_assistant_messages';
 
-const AIAssistant: React.FC = () => {
+interface AIAssistantProps {
+  showAssistantButton?: boolean;
+}
+
+const AIAssistant: React.FC<AIAssistantProps> = ({ showAssistantButton = true }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
   
@@ -50,6 +54,20 @@ const AIAssistant: React.FC = () => {
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   }, [messages]);
+
+  // Add a function to expose opening the assistant
+  const openAssistant = () => setIsOpen(true);
+
+  // Add to window object so it can be called from anywhere
+  useEffect(() => {
+    // @ts-ignore - Add a global function to open the assistant
+    window.openAIAssistant = openAssistant;
+    
+    return () => {
+      // @ts-ignore - Clean up when component unmounts
+      delete window.openAIAssistant;
+    };
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,13 +111,15 @@ const AIAssistant: React.FC = () => {
   return (
     <div className="fixed bottom-0 right-4 md:right-8 z-40">
       {!isOpen ? (
-        <Button 
-          onClick={() => setIsOpen(true)}
-          className="rounded-full bg-newswire-black text-white hover:bg-newswire-darkGray"
-        >
-          <Bot size={20} className="mr-2" />
-          <span>AI Assistant</span>
-        </Button>
+        showAssistantButton && (
+          <Button 
+            onClick={() => setIsOpen(true)}
+            className="rounded-full bg-newswire-black text-white hover:bg-newswire-darkGray"
+          >
+            <Bot size={20} className="mr-2" />
+            <span>AI Assistant</span>
+          </Button>
+        )
       ) : (
         <Card className="w-full sm:w-96 h-96 shadow-lg border border-newswire-lightGray">
           <div className="flex justify-between items-center p-3 border-b border-newswire-lightGray bg-newswire-lightGray">

@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import AIAssistant from '@/components/ai/AIAssistant';
 
 const StoryDetail = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -285,7 +286,7 @@ const StoryDetail = () => {
               <Separator className="my-8" />
               
               {/* AI Overview Section - now with isStoryDetail=true */}
-              <AIOverviewSection story={story} isStoryDetail={true} />
+              {story && <AIOverviewSection story={story} isStoryDetail={true} />}
             </div>
           </div>
           
@@ -295,6 +296,9 @@ const StoryDetail = () => {
           </div>
         </div>
       </div>
+      
+      {/* AI Assistant with showAssistantButton set to false */}
+      <AIAssistant showAssistantButton={false} />
     </Layout>
   );
 };

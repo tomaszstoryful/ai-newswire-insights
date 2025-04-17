@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { Bot, MessageSquare, Send, Link, ExternalLink, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { Bot, MessageSquare, Send, Link, ExternalLink, ThumbsUp, ThumbsDown, MessageCircle } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -63,15 +64,33 @@ const AIOverviewSection: React.FC<AIOverviewSectionProps> = ({ story, isStoryDet
     }
   };
 
+  const openAIAssistant = () => {
+    // @ts-ignore - Use the global function added to window object
+    if (window.openAIAssistant) {
+      // @ts-ignore
+      window.openAIAssistant();
+    }
+  };
+
   return (
     <>
       <Card className="border border-newswire-lightGray shadow-md mb-8">
         <div className="bg-gradient-to-r from-newswire-accent/10 to-transparent p-6">
-          <div className="flex items-center mb-4">
-            <Bot size={24} className="text-newswire-accent mr-3" />
-            <h2 className="text-2xl font-display font-bold">
-              {isStoryDetail ? "Story Intelligence" : "AI News Intelligence"}
-            </h2>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center">
+              <Bot size={24} className="text-newswire-accent mr-3" />
+              <h2 className="text-2xl font-display font-bold">
+                {isStoryDetail ? "Story Intelligence" : "AI News Intelligence"}
+              </h2>
+            </div>
+            <Button 
+              onClick={openAIAssistant}
+              variant="outline" 
+              className="flex items-center gap-2 border-newswire-accent text-newswire-accent hover:bg-newswire-accent/10"
+            >
+              <MessageCircle size={16} />
+              <span className="hidden sm:inline">Open AI Assistant</span>
+            </Button>
           </div>
           
           {isStoryDetail ? (
