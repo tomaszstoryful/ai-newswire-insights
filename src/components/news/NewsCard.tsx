@@ -26,7 +26,7 @@ const NewsCard: React.FC<NewsCardProps> = ({ story, variant = 'default', size })
     e.preventDefault();
     console.log(`Navigating to story ID: ${story.id}`);
     
-    // Use navigate instead of direct window.location for better user experience
+    // Using navigate to handle the navigation
     navigate(`/story/${story.id}`);
   };
   

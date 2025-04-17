@@ -2,15 +2,15 @@
 import { APIStory, APIStoryResponse, NewsStory } from '@/types/news';
 import { toast } from '@/components/ui/use-toast';
 
-const API_BASE_URL = 'https://api.allorigins.win/raw?url=';
+const API_BASE_URL = 'https://corsproxy.io/?';
 const API_ENDPOINT = 'https://newswire-story-recommendation.staging.storyful.com/api/stories';
 const STORIES_CACHE_KEY = 'newswire_stories_cache';
 const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes
 
-// List of CORS proxies to try
+// List of CORS proxies to try in order
 const CORS_PROXIES = [
-  'https://api.allorigins.win/raw?url=',
   'https://corsproxy.io/?',
+  'https://api.allorigins.win/raw?url=',
   'https://cors-anywhere.herokuapp.com/'
 ];
 
@@ -30,16 +30,50 @@ const addCacheBuster = (url: string): string => {
   return `${url}${separator}_t=${Date.now()}`;
 };
 
+// Direct fetch without proxy (to be attempted first)
+const fetchWithoutProxy = async <T>(url: string): Promise<T | null> => {
+  try {
+    console.log(`Attempting direct fetch to: ${url}`);
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate'
+      },
+      mode: 'cors'
+    });
+    await handleErrors(response);
+    const data = await response.json();
+    console.log(`Direct fetch successful: ${url}`);
+    return data as T;
+  } catch (error) {
+    console.log(`Direct fetch failed: ${error}`);
+    return null;
+  }
+};
+
 // Function to fetch data from the API with retries through different proxies
 const fetchData = async <T>(endpoint: string, params?: string): Promise<T> => {
   const targetUrl = params ? `${endpoint}${params}` : endpoint;
   const errors: Error[] = [];
+  
+  // Try direct fetch first if it's a GET request and simple URL
+  try {
+    const directResult = await fetchWithoutProxy<T>(addCacheBuster(targetUrl));
+    if (directResult) {
+      return directResult;
+    }
+  } catch (error) {
+    console.log('Direct fetch failed, trying proxies...');
+  }
 
   // Try each proxy in sequence
   for (const proxy of CORS_PROXIES) {
     try {
       // Add cache busting parameter to avoid stale data
-      const url = `${proxy}${encodeURIComponent(addCacheBuster(targetUrl))}`;
+      const url = proxy.includes('?url=') 
+        ? `${proxy}${encodeURIComponent(addCacheBuster(targetUrl))}`
+        : `${proxy}${addCacheBuster(targetUrl)}`;
+      
       console.log(`Trying to fetch from: ${url}`);
       
       const response = await fetch(url, {
@@ -307,3 +341,4 @@ export const getRecommendedStories = async (storyId: number): Promise<NewsStory[
     return [];
   }
 };
+
