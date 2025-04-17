@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Search, Filter } from 'lucide-react';
 import AIOverviewSection from '@/components/ai/AIOverviewSection';
 import AIAssistant from '@/components/ai/AIAssistant';
+import { Skeleton } from '@/components/ui/skeleton'; // Add this import
 
 const Index = () => {
   const [featuredVideo, setFeaturedVideo] = useState<NewsStory | null>(null);
@@ -124,3 +125,4 @@ const Index = () => {
 };
 
 export default Index;
+
