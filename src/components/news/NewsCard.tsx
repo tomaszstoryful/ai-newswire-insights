@@ -24,8 +24,10 @@ const NewsCard: React.FC<NewsCardProps> = ({ story, variant = 'default', size })
   
   const handleStoryClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
-    // Force a full navigation to ensure proper loading
-    window.location.href = `/story/${story.id}`;
+    console.log(`Navigating to story ID: ${story.id}`);
+    
+    // Use navigate instead of direct window.location for better user experience
+    navigate(`/story/${story.id}`);
   };
   
   const getClearanceBadge = (clearance: string) => {

@@ -1,3 +1,4 @@
+
 import { APIStory, APIStoryResponse, NewsStory } from '@/types/news';
 import { toast } from '@/components/ui/use-toast';
 
@@ -23,6 +24,12 @@ const handleErrors = async (response: Response) => {
   return response;
 };
 
+// Helper function to add cache busting parameter
+const addCacheBuster = (url: string): string => {
+  const separator = url.includes('?') ? '&' : '?';
+  return `${url}${separator}_t=${Date.now()}`;
+};
+
 // Function to fetch data from the API with retries through different proxies
 const fetchData = async <T>(endpoint: string, params?: string): Promise<T> => {
   const targetUrl = params ? `${endpoint}${params}` : endpoint;
@@ -31,10 +38,16 @@ const fetchData = async <T>(endpoint: string, params?: string): Promise<T> => {
   // Try each proxy in sequence
   for (const proxy of CORS_PROXIES) {
     try {
-      const url = `${proxy}${encodeURIComponent(targetUrl)}&_t=${Date.now()}`;
+      // Add cache busting parameter to avoid stale data
+      const url = `${proxy}${encodeURIComponent(addCacheBuster(targetUrl))}`;
       console.log(`Trying to fetch from: ${url}`);
       
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate'
+        }
+      });
       await handleErrors(response);
       const data = await response.json();
       console.log(`Successfully fetched data from ${url}`);
@@ -105,7 +118,7 @@ const transformAPIStory = (apiStory: APIStory): NewsStory => {
     id: parseInt(apiStory.id),
     title: apiStory.title,
     slug: apiStory.title_slug,
-    summary: apiStory.summary,
+    summary: apiStory.summary || apiStory.extended_summary || "No summary available",
     published_date: apiStory.published_date,
     updated_at: apiStory.published_date,
     editorial_updated_at: apiStory.published_date,
@@ -122,9 +135,9 @@ const transformAPIStory = (apiStory: APIStory): NewsStory => {
     collection_headline: '',
     collection_summary_html: '',
     lead_item: {
-      id: parseInt(apiStory.id), // Using the same ID as the story
+      id: parseInt(apiStory.id),
       resource_type: 'video',
-      type: 'video', // Required by the interface
+      type: 'video',
       media_button: {
         first_time: false,
         already_downloaded_by_relative: false,
@@ -184,39 +197,64 @@ export const fetchStoryById = async (id: string): Promise<{ story: NewsStory; si
 
 export const getTopStories = async (forceRefresh: boolean = false): Promise<NewsStory[]> => {
   try {
-    // Check if we have a valid cache
+    console.log('Starting getTopStories function, forceRefresh:', forceRefresh);
+    
+    // Check if we have a valid cache and forceRefresh is false
     if (!forceRefresh) {
       const cachedData = sessionStorage.getItem(STORIES_CACHE_KEY);
       if (cachedData) {
-        const { stories, timestamp } = JSON.parse(cachedData);
-        const isExpired = Date.now() - timestamp > CACHE_EXPIRY;
-        
-        if (!isExpired && Array.isArray(stories) && stories.length > 0) {
-          console.log('Using cached stories:', stories.length);
-          return stories;
+        try {
+          const { stories, timestamp } = JSON.parse(cachedData);
+          const isExpired = Date.now() - timestamp > CACHE_EXPIRY;
+          
+          if (!isExpired && Array.isArray(stories) && stories.length > 0) {
+            console.log('Using cached stories:', stories.length);
+            return stories;
+          } else {
+            console.log('Cache expired or invalid, fetching fresh data');
+          }
+        } catch (e) {
+          console.error('Error parsing cached data:', e);
+          // Continue to fetch fresh data
         }
       }
+    } else {
+      console.log('Force refresh requested, bypassing cache');
     }
     
-    console.log('Fetching fresh stories...');
+    console.log('Fetching fresh stories from API...');
     
     try {
+      // Use a direct query parameter without a function call
       const data = await fetchData<APIStory[]>(`${API_ENDPOINT}`, '?limit=20');
       
-      if (!Array.isArray(data) || data.length === 0) {
-        throw new Error('No stories found in API response');
+      if (!Array.isArray(data)) {
+        console.error('Unexpected API response format (not an array):', data);
+        throw new Error('API response is not an array of stories');
+      }
+      
+      if (data.length === 0) {
+        console.warn('API returned an empty array of stories');
+      } else {
+        console.log('API returned stories:', data.length);
       }
       
       const stories = data.map(transformAPIStory);
       
       // Cache the result
-      sessionStorage.setItem(
-        STORIES_CACHE_KEY,
-        JSON.stringify({
-          stories,
-          timestamp: Date.now()
-        })
-      );
+      try {
+        sessionStorage.setItem(
+          STORIES_CACHE_KEY,
+          JSON.stringify({
+            stories,
+            timestamp: Date.now()
+          })
+        );
+        console.log('Successfully cached', stories.length, 'stories');
+      } catch (e) {
+        console.error('Error caching stories:', e);
+        // Continue without caching
+      }
       
       console.log(`Successfully fetched ${stories.length} stories`);
       return stories;
@@ -231,11 +269,14 @@ export const getTopStories = async (forceRefresh: boolean = false): Promise<News
       });
       
       // Return mock data as fallback
-      return Array.from({ length: 10 }, (_, i) => getMockData(200000 + i));
+      const mockStories = Array.from({ length: 10 }, (_, i) => getMockData(200000 + i));
+      console.log('Returning mock stories:', mockStories.length);
+      return mockStories;
     }
   } catch (error) {
     console.error('Unhandled error in getTopStories:', error);
-    throw error;
+    // Return empty array to prevent UI breakage
+    return [];
   }
 };
 

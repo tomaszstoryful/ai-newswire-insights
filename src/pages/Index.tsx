@@ -43,7 +43,9 @@ const Index = () => {
       console.log('Fetched videos:', allVideos.length);
       
       if (allVideos.length > 0) {
+        // Set featured video to the first item
         setFeaturedVideo(allVideos[0]);
+        // Set the rest of the videos
         setVideos(allVideos.slice(1));
         
         if (showToast) {
@@ -57,6 +59,14 @@ const Index = () => {
         setLoadError('No videos available at this time. Please try again later.');
         setFeaturedVideo(null);
         setVideos([]);
+        
+        if (showToast) {
+          toast({
+            title: "No stories available",
+            description: "Try refreshing again in a moment.",
+            variant: "destructive",
+          });
+        }
       }
     } catch (error) {
       console.error('Error in component when fetching videos:', error);
@@ -77,38 +87,29 @@ const Index = () => {
     }
   };
 
-  // Use a more comprehensive approach to fetch fresh data
+  // Initial load and route change handling
   useEffect(() => {
+    console.log('Index component mounted or route changed');
     // On initial load, force refresh to avoid dummy data
     fetchVideos(false, true);
     
-    // Handle navigation events
-    const handleRouteChange = () => {
-      if (location.pathname === '/') {
-        console.log('Back on home page, refreshing data...');
-        fetchVideos(false, true);
-      }
-    };
-    
-    // Listen for both popstate (back/forward) and navigation events
-    window.addEventListener('popstate', handleRouteChange);
-    
-    // Clean up when component unmounts
+    // Clean up function
     return () => {
-      window.removeEventListener('popstate', handleRouteChange);
+      console.log('Index component unmounting');
     };
-  }, [location.pathname]);
+  }, []);
+
+  // Handle manual refresh
+  const handleManualRefresh = () => {
+    console.log('Manual refresh requested');
+    fetchVideos(true, true);
+  };
 
   // Filter videos based on search term
   const filteredVideos = videos.filter(video => 
     video.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     video.summary.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  // When user manually refreshes, force a refresh from API
-  const handleManualRefresh = () => {
-    fetchVideos(true, true);
-  };
 
   // Render skeleton loaders when loading
   const renderSkeletons = () => {
