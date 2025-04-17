@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Bot, MessageSquare, Code, ChevronRight, ChevronLeft, ChevronDown, Trash2 } from 'lucide-react';
+import { X, Bot, MessageSquare, Code, ChevronRight, ChevronLeft, ChevronDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,12 +9,6 @@ import { formatDate } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 interface AINewsModalProps {
   open: boolean;
@@ -126,21 +120,15 @@ const AINewsModal: React.FC<AINewsModalProps> = ({ open, onClose, initialMessage
               <Bot size={20} className="text-newswire-accent mr-2" />
               <h2 className="text-xl font-display font-bold">Newswire AI Assistant</h2>
             </div>
-            <div className="flex items-center gap-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="hover:bg-newswire-lightGray/50 transition-colors">
-                    <Trash2 size={18} />
-                    <span className="sr-only">Clear Chat</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={handleClearChat}>
-                    Clear Chat History
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={onClose} 
+              className="hover:bg-newswire-lightGray/50 transition-colors"
+            >
+              <X size={18} />
+              <span className="sr-only">Close</span>
+            </Button>
           </div>
           
           <div className="flex-grow overflow-hidden">
