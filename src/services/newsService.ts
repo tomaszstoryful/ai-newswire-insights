@@ -1,36 +1,51 @@
-
 import { NewsStory } from '@/types/news';
 
-// Sample news data based on the provided JSON
-const sampleStory: NewsStory = {
-  updated_at: "2025-04-16T06:30:05Z",
-  lead_image: {
-    url: "https://storyful.s3.amazonaws.com/production/stories/322510/original.gif",
-    filename: "original.gif"
-  },
-  lead_item: {
-    id: 4415051,
-    media_button: {
-      first_time: true,
-      already_downloaded_by_relative: false,
-      action: "/stories/322510/media/4415051/download?exclude_from_home_page=true&format=json&page=1"
+// API URL
+const API_URL = 'https://newswire-story-recommendation.staging.storyful.com/api/stories';
+
+// Transform API data to match our existing NewsStory type
+const transformApiData = (apiData: any[]): NewsStory[] => {
+  return apiData.map(item => ({
+    id: parseInt(item.id),
+    title: item.title,
+    slug: item.title_slug || `story-${item.id}`,
+    summary: item.summary || item.extended_summary || '',
+    published_date: item.published_date,
+    updated_at: item.published_date, // Using published_date as updated_at
+    editorial_updated_at: item.published_date, // Using published_date as editorial_updated_at
+    clearance_mark: item.story_mark_clearance || 'PUBLIC',
+    lead_image: item.image_url ? {
+      url: item.image_url,
+      filename: 'image.webp'
+    } : undefined,
+    lead_item: {
+      id: parseInt(item.id),
+      media_button: {
+        first_time: true,
+        already_downloaded_by_relative: false,
+        action: item.media_url || ''
+      },
+      resource_type: "video",
+      type: "ItemYoutube"
     },
-    resource_type: "video",
-    type: "ItemYoutube"
-  },
-  in_trending_collection: false,
-  editorial_updated_at: "2025-04-16T06:30:05Z",
-  collection_headline: "13/04/2025",
-  collection_summary_html: "",
-  id: 322510,
-  title: "Stranded Dog Rescued From Rooftop After Escaping Through Attic Window",
-  slug: "US-CT",
-  published_date: "2025-04-15T20:59:23Z",
-  clearance_mark: "LICENSED",
-  video_providing_partner: false,
-  summary: "Firefighters in Hartford, Connecticut, rescued a dog from the roof of a 2.5-story home on April 13, according to local media, citing officials.\n\nOfficials said the dog escaped through an open attic window and jumped onto the main roof of the home, located on the 200 block of New Park Avenue.\n\nVideo filmed by Kari L Bramhall shows firefighters using a ladder truck to safely retrieve the dog around 3:45 pm on Sunday.\n\nThe dog was not injured, did not fall, and was brought down safely, reports say.\n\n\"Based on his bravery, climbing, and comfort being on that roof, I may have to offer this puppy a job,\" joked Hartford Fire Department District Chief Mario Oquendo Jr.",
-  place_id: "ChIJOThsZkohTIYRhvmYx7ZKWeY",
-  regions: ["North America"]
+    in_trending_collection: false,
+    regions: item.categories ? JSON.parse(item.categories.replace(/'/g, '"')) : []
+  }));
+};
+
+// Fetch real stories from the API
+export const getTopStories = async (): Promise<NewsStory[]> => {
+  try {
+    const response = await fetch(API_URL);
+    if (!response.ok) {
+      throw new Error('Failed to fetch stories');
+    }
+    const data = await response.json();
+    return transformApiData(data);
+  } catch (error) {
+    console.error('Error fetching stories:', error);
+    return []; // Return empty array on error
+  }
 };
 
 // Generate some mock news stories based on the sample
@@ -66,10 +81,6 @@ const generateMockStories = (): NewsStory[] => {
 };
 
 const mockStories = generateMockStories();
-
-export const getTopStories = (): Promise<NewsStory[]> => {
-  return Promise.resolve(mockStories);
-};
 
 export const getStoryBySlug = (slug: string): Promise<NewsStory | undefined> => {
   return Promise.resolve(mockStories.find(story => story.slug === slug));
