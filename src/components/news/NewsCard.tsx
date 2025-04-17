@@ -10,9 +10,10 @@ import { formatDate, getRandomInt } from '@/lib/utils';
 interface NewsCardProps {
   story: NewsStory;
   variant?: 'default' | 'compact' | 'featured';
+  size?: string;  // Added size prop to match what's being passed in Index.tsx
 }
 
-const NewsCard: React.FC<NewsCardProps> = ({ story, variant = 'default' }) => {
+const NewsCard: React.FC<NewsCardProps> = ({ story, variant = 'default', size }) => {
   const isFeatured = variant === 'featured';
   const isCompact = variant === 'compact';
   
