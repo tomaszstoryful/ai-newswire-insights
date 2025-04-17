@@ -290,6 +290,8 @@ const StoryDetail = () => {
           </div>
         </div>
       </div>
+      
+      <AIAssistant showAssistantButton={false} />
     </Layout>
   );
 };

@@ -7,6 +7,7 @@ import { getTopStories } from '@/services/newsService';
 import { Button } from '@/components/ui/button';
 import { Search, Filter } from 'lucide-react';
 import AIOverviewSection from '@/components/ai/AIOverviewSection';
+import AIAssistant from '@/components/ai/AIAssistant';
 // Remove any imported AI-related modules that are no longer needed
 
 const Index = () => {
@@ -90,7 +91,7 @@ const Index = () => {
         </div>
       </div>
 
-      {/* AI Assistant with showAssistantButton set to false */}
+      {/* Add AI Assistant component */}
       <AIAssistant showAssistantButton={false} />
     </Layout>
   );
