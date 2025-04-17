@@ -2,7 +2,7 @@
 import React from 'react';
 import { NewsStory } from '@/types/news';
 import { formatDate, getRandomInt } from '@/lib/utils';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Clock, Video, Play, Calendar, ExternalLink } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -13,10 +13,18 @@ interface RecommendedStoriesProps {
 }
 
 const RecommendedStories: React.FC<RecommendedStoriesProps> = ({ stories, currentStoryId }) => {
+  const navigate = useNavigate();
+  
   // Filter out the current story if it's in the recommended list
   const filteredStories = currentStoryId 
     ? stories.filter(story => story.id !== currentStoryId).slice(0, 5)
     : stories.slice(0, 5);
+
+  const handleStoryClick = (e: React.MouseEvent<HTMLAnchorElement>, storyId: number) => {
+    e.preventDefault();
+    // Force a full navigation to the story page to ensure proper loading
+    window.location.href = `/story/${storyId}`;
+  };
 
   return (
     <div className="border border-newswire-lightGray rounded-lg overflow-hidden shadow-sm bg-white">
@@ -37,9 +45,10 @@ const RecommendedStories: React.FC<RecommendedStoriesProps> = ({ stories, curren
             const storyLink = `/story/${story.id}`;
             
             return (
-              <Link 
+              <a 
                 key={story.id} 
-                to={storyLink}
+                href={storyLink}
+                onClick={(e) => handleStoryClick(e, story.id)}
                 className="block hover:bg-newswire-lightGray/20 transition-colors group"
               >
                 <div className="flex gap-3 p-4">
@@ -87,7 +96,7 @@ const RecommendedStories: React.FC<RecommendedStoriesProps> = ({ stories, curren
                     <ExternalLink size={14} className="text-newswire-mediumGray" />
                   </div>
                 </div>
-              </Link>
+              </a>
             );
           })
         ) : (

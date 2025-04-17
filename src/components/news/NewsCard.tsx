@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Calendar, Clock, MapPin, Play, Lock, ShieldCheck, AlertTriangle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -14,12 +14,19 @@ interface NewsCardProps {
 }
 
 const NewsCard: React.FC<NewsCardProps> = ({ story, variant = 'default', size }) => {
+  const navigate = useNavigate();
   const isFeatured = variant === 'featured';
   const isCompact = variant === 'compact';
   
   const minutes = getRandomInt(1, 15);
   const seconds = getRandomInt(10, 59);
   const durationString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  
+  const handleStoryClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    // Force a full navigation to ensure proper loading
+    window.location.href = `/story/${story.id}`;
+  };
   
   const getClearanceBadge = (clearance: string) => {
     switch (clearance) {
@@ -58,7 +65,11 @@ const NewsCard: React.FC<NewsCardProps> = ({ story, variant = 'default', size })
 
   return (
     <Card className={`overflow-hidden transition-all hover:shadow-md ${isFeatured ? 'md:flex h-full' : ''}`}>
-      <Link to={storyLink} className="block h-full">
+      <a 
+        href={storyLink}
+        onClick={handleStoryClick}
+        className="block h-full"
+      >
         <div className={`${isFeatured ? 'md:w-1/2 md:flex-shrink-0' : ''}`}>
           <div className="relative aspect-video bg-newswire-lightGray">
             {story.lead_image?.url ? (
@@ -117,7 +128,7 @@ const NewsCard: React.FC<NewsCardProps> = ({ story, variant = 'default', size })
             )}
           </div>
         </CardContent>
-      </Link>
+      </a>
     </Card>
   );
 };
