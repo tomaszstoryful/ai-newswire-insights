@@ -1,5 +1,6 @@
 
 import { NewsStory, APIStoryResponse, APIStory } from '@/types/news';
+import { toast } from '@/components/ui/use-toast';
 
 // Function to transform API story data to our NewsStory format
 export const transformAPIStoryToNewsStory = (apiStory: APIStory): NewsStory => {
@@ -27,7 +28,7 @@ export const transformAPIStoryToNewsStory = (apiStory: APIStory): NewsStory => {
       clearance_mark: apiStory.story_mark_clearance || "PUBLIC",
       in_trending_collection: false,
       lead_image: {
-        url: apiStory.image_url || 'https://via.placeholder.com/640x360?text=No+Image',
+        url: apiStory.image_url || '',
         filename: apiStory.image_url?.split('/').pop() || 'image.webp'
       },
       lead_item: {
@@ -175,66 +176,9 @@ export const fetchStoriesFromAPI = async (forceRefresh = false): Promise<NewsSto
       console.error('Error accessing cached stories:', cacheError);
     }
     
-    // Last resort - hardcoded sample data
-    console.error('All API attempts failed, using hardcoded sample data');
-    
-    // Use the array of actual API data (not the mock stories)
-    const hardcodedApiStories = [
-      {
-        "categories":"[\"US\", \"news & politics\"]",
-        "channels":"[\"MRSS Licensed\", \"Viral\", \"Licensed\"]",
-        "collections":"[]",
-        "extended_summary":"Footage filmed by Spencer White shows the funnel spinning near Sam Bishkin Road on Thursday afternoon.\n\nAccording to the Wharton County Office of Emergency Management, the tornado damaged multiple barns as it touched down near Highway 59. There were no injuries reported.",
-        "id":"317273",
-        "image_url":"https://img.news.storyful.com/stories/317273/rt:fill/el:1/s:495:250/original.gif@webp",
-        "keywords":"[\"Social media\", \"Tornado\", \"Google Maps\", \"Office of Emergency Management\", \"Chimney\", \"U.S. Route 59\", \"Wharton County, Texas\", \"Uniform Resource Locator\", \"Storyful\", \"El Campo, Texas\", \"Local insertion\"]",
-        "media_url":"https://videos.storyful.com/syfl-71dbddba8a15e4015c89eadb1aff8671d5d812b3-original.mp4",
-        "provider_url":"https://www.youtube.com/watch?v=qljyTulWMms",
-        "published_date":"2024-12-27 03:40:58 UTC",
-        "stated_location":"El Campo, Texas",
-        "story_mark_clearance":"LICENSED",
-        "story_mark_guidance":"",
-        "summary":"A tornado touched down in El Campo, Texas, damaging structures and whipping up dust on December 26.\n\nFootage filmed by Spencer White shows the funnel spinning near Sam Bishkin Road on Thursday afternoon.\n\nAccording to the Wharton County Office of Emergency Management, the tornado damaged multiple barns as it touched down near Highway 59. There were no injuries reported.",
-        "title":"Tornado Spotted Swirling Over El Campo",
-        "title_date":"December 26 2024",
-        "title_slug":"US-TX",
-        "total_downloads":"1",
-        "total_views":"11",
-        "unique_downloads":"1",
-        "unique_views":"4"
-      },
-      {
-        "categories":"[\"Australia\", \"Human Interest\"]",
-        "channels":"[\"MRSS Licensed\", \"Viral\", \"Licensed\"]",
-        "collections":"[]",
-        "extended_summary":"Footage filmed by Matt Roberts shows his neighbor moving his mower toward the reptile on Thursday afternoon. Roberts' neighbors said they were concerned for the safety of children living in the area, so they contacted a local snake catcher.\n\nSpeaking to Storyful, Roberts said that the snake was eventually captured humanely by a wildlife removal service and relocated.",
-        "id":"317285",
-        "image_url":"https://img.news.storyful.com/stories/317285/rt:fill/el:1/s:495:250/original.gif@webp",
-        "keywords":"[\"Reptile\", \"Snake catcher\", \"Lawn mower\", \"Snake\", \"Neighbor\", \"Storyful\", \"Australia\", \"Eastern brown snake\", \"Service animal\", \"Lawn\"]",
-        "media_url":"https://videos.storyful.com/syfl-d7f67d83fd3d1faa9c301cba5c8ba5f30efb6b11-original.mp4",
-        "provider_url":"https://www.youtube.com/watch?v=DdmhkL04UHE",
-        "published_date":"2024-12-26 23:35:08 UTC",
-        "stated_location":"Moruya, New South Wales, Australia",
-        "story_mark_clearance":"LICENSED",
-        "story_mark_guidance":"",
-        "summary":"A homeowner in Moruya, New South Wales, had a close encounter with a venomous eastern brown snake while mowing his lawn on December 19.\n\nFootage filmed by Matt Roberts shows his neighbor moving his mower toward the reptile on Thursday afternoon. Roberts' neighbors said they were concerned for the safety of children living in the area, so they contacted a local snake catcher.\n\nSpeaking to Storyful, Roberts said that the snake was eventually captured humanely by a wildlife removal service and relocated.",
-        "title":"Venomous Eastern Brown Snake Stops Man From Mowing Lawn in New South Wales",
-        "title_date":"December 19 2024",
-        "title_slug":"AU-NSW",
-        "total_downloads":"2",
-        "total_views":"11",
-        "unique_downloads":"2",
-        "unique_views":"6"
-      }
-    ];
-    
-    // Transform the hardcoded stories
-    const transformedHardcodedStories = hardcodedApiStories.map((story: any) => {
-      return transformAPIStoryToNewsStory(story);
-    });
-    
-    console.log(`Returning ${transformedHardcodedStories.length} hardcoded stories as last resort`);
-    return transformedHardcodedStories;
+    // Instead of hardcoded data, return empty array and let component handle the display
+    console.error('All API attempts failed, returning empty array');
+    throw new Error('Failed to fetch stories from any source');
   }
 };
 
@@ -355,147 +299,8 @@ export const fetchStoryById = async (storyId: string | number, forceRefresh = fa
       console.error('Error checking cached stories for story:', cacheError);
     }
     
-    // If it's story ID 317273 or 317285, use the hardcoded example data
-    if (storyId === '317273' || storyId === 317273) {
-      console.log('Using hardcoded data for tornado story ID 317273');
-      const hardcodedExample = {
-        "story": {
-          "categories": "[\"US\", \"news & politics\"]",
-          "channels": "[\"MRSS Licensed\", \"Viral\", \"Licensed\"]",
-          "collections": "[]",
-          "extended_summary": "Footage filmed by Spencer White shows the funnel spinning near Sam Bishkin Road on Thursday afternoon.\n\nAccording to the \"\nWharton County Office of Emergency Management\":https://www.facebook.com/permalink.php?story_fbid=612586047964256&id=100076385977807, the tornado damaged multiple barns as it touched down near Highway 59. There were no injuries reported.",
-          "id": "317273",
-          "image_url": "https://img.news.storyful.com/stories/317273/rt:fill/el:1/s:495:250/original.gif@webp",
-          "keywords": "[\"Social media\", \"Tornado\", \"Google Maps\", \"Office of Emergency Management\", \"Chimney\", \"U.S. Route 59\", \"Wharton County, Texas\", \"Uniform Resource Locator\", \"Storyful\", \"El Campo, Texas\", \"Local insertion\"]",
-          "media_url": "https://videos.storyful.com/syfl-71dbddba8a15e4015c89eadb1aff8671d5d812b3-original.mp4",
-          "provider_url": "https://www.youtube.com/watch?v=qljyTulWMms",
-          "published_date": "2024-12-27 03:40:58 UTC",
-          "stated_location": "El Campo, Texas",
-          "story_mark_clearance": "LICENSED",
-          "story_mark_guidance": "",
-          "summary": "A tornado \"touched down\":https://www.facebook.com/permalink.php?story_fbid=612586047964256&id=100076385977807 in El Campo, Texas, damaging structures and whipping up dust on December 26.\n\nFootage filmed by Spencer White shows the funnel spinning near Sam Bishkin Road on Thursday afternoon.\n\nAccording to the \"\nWharton County Office of Emergency Management\":https://www.facebook.com/permalink.php?story_fbid=612586047964256&id=100076385977807, the tornado damaged multiple barns as it touched down near Highway 59. There were no injuries reported.",
-          "title": "Tornado Spotted Swirling Over El Campo",
-          "title_date": "December 26 2024",
-          "title_slug": "US-TX",
-          "total_downloads": "1",
-          "total_views": "11",
-          "unique_downloads": "1",
-          "unique_views": "4"
-        },
-        "similar_stories": [
-          {
-            "categories": "[\"weather\", \"others\", \"storms\"]",
-            "channels": "[]",
-            "collections": "[\"US Weather\"]",
-            "extended_summary": "This video shows rain and light hail falling in north Dallas, according to the source.\n\nThe storms were expected move eastward out of the Dallas-Fort Worth area by 2pm, the National Weather Service \"said\":https://x.com/NWSFortWorth/status/1872266112609476875.",
-            "id": "317266",
-            "image_url": "https://img.news.storyful.com/stories/317266/rt:fill/el:1/s:495:250/original.gif@webp",
-            "keywords": "[\"Thunderstorm\", \"Rain\", \"Hail\", \"Weather\", \"National Weather Service\", \"Flash flood\", \"Dallas–Fort Worth metroplex\", \"Dallas\", \"Central Texas\", \"Mesquite, Texas\", \"2PM\", \"The Thunder Rolls\", \"Local news\", \"Thunder\", \"Storyful\", \"Meteorologist\"]",
-            "media_url": "https://videos.storyful.com/syfl-26772d25d7867bc2833b5f9b2e471ca6bd1b8d69-original.mp4",
-            "provider_url": "https://x.com/ts_texam/status/1872350247369756895",
-            "published_date": "2024-12-26 20:09:43 UTC",
-            "stated_location": "Dallas, Texas",
-            "story_mark_clearance": "CLEARED",
-            "story_mark_guidance": "",
-            "summary": "A round of thunderstorms hit north and central Texas on Thursday, December 26, bringing heavy rain and hail, thunder and lightning, and a risk of flash flooding, weather officials \"said.\":https://x.com/NWSFortWorth/status/1872307108814999852\n\nThis video shows rain and light hail falling in north Dallas, according to the source.\n\nThe storms were expected move eastward out of the Dallas-Fort Worth area by 2pm, the National Weather Service \"said\":https://x.com/NWSFortWorth/status/1872266112609476875.",
-            "title": "Rain and Hail Dampen Dallas Area",
-            "title_date": "December 26 2024",
-            "title_slug": "US-TX",
-            "total_downloads": "11",
-            "total_views": "35",
-            "unique_downloads": "9",
-            "unique_views": "13"
-          }
-        ]
-      };
-      
-      const mainStory = transformAPIStoryToNewsStory(hardcodedExample.story as unknown as APIStory);
-      const similarStories = hardcodedExample.similar_stories.map(story => 
-        transformAPIStoryToNewsStory(story as unknown as APIStory)
-      );
-      
-      const result = {
-        story: mainStory,
-        similarStories
-      };
-      
-      // Cache this result
-      sessionStorage.setItem(`story_${storyId}`, JSON.stringify(result));
-      sessionStorage.setItem(`story_${storyId}_timestamp`, Date.now().toString());
-      
-      return result;
-    } else if (storyId === '317285' || storyId === 317285) {
-      console.log('Using hardcoded data for snake story ID 317285');
-      const hardcodedExample = {
-        "story": {
-          "categories": "[\"Australia\", \"Human Interest\"]",
-          "channels": "[\"MRSS Licensed\", \"Viral\", \"Licensed\"]",
-          "collections": "[]",
-          "extended_summary": "Footage filmed by Matt Roberts shows his neighbor moving his mower toward the reptile on Thursday afternoon. Roberts' neighbors said they were concerned for the safety of children living in the area, so they contacted a local snake catcher.\n\nSpeaking to Storyful, Roberts said that the snake was eventually captured humanely by a wildlife removal service and relocated.",
-          "id": "317285",
-          "image_url": "https://img.news.storyful.com/stories/317285/rt:fill/el:1/s:495:250/original.gif@webp",
-          "keywords": "[\"Reptile\", \"Snake catcher\", \"Lawn mower\", \"Snake\", \"Neighbor\", \"Storyful\", \"Australia\", \"Eastern brown snake\", \"Service animal\", \"Lawn\"]",
-          "media_url": "https://videos.storyful.com/syfl-d7f67d83fd3d1faa9c301cba5c8ba5f30efb6b11-original.mp4",
-          "provider_url": "https://www.youtube.com/watch?v=DdmhkL04UHE",
-          "published_date": "2024-12-26 23:35:08 UTC",
-          "stated_location": "Moruya, New South Wales, Australia",
-          "story_mark_clearance": "LICENSED",
-          "story_mark_guidance": "",
-          "summary": "A homeowner in Moruya, New South Wales, had a close encounter with a venomous eastern brown snake while mowing his lawn on December 19.\n\nFootage filmed by Matt Roberts shows his neighbor moving his mower toward the reptile on Thursday afternoon. Roberts' neighbors said they were concerned for the safety of children living in the area, so they contacted a local snake catcher.\n\nSpeaking to Storyful, Roberts said that the snake was eventually captured humanely by a wildlife removal service and relocated.",
-          "title": "Venomous Eastern Brown Snake Stops Man From Mowing Lawn in New South Wales",
-          "title_date": "December 19 2024",
-          "title_slug": "AU-NSW",
-          "total_downloads": "2",
-          "total_views": "11",
-          "unique_downloads": "2",
-          "unique_views": "6"
-        },
-        "similar_stories": [
-          {
-            "categories": "[\"weather\", \"others\", \"storms\"]",
-            "channels": "[]",
-            "collections": "[\"US Weather\"]",
-            "extended_summary": "This video shows rain and light hail falling in north Dallas, according to the source.\n\nThe storms were expected move eastward out of the Dallas-Fort Worth area by 2pm, the National Weather Service \"said\":https://x.com/NWSFortWorth/status/1872266112609476875.",
-            "id": "317266",
-            "image_url": "https://img.news.storyful.com/stories/317266/rt:fill/el:1/s:495:250/original.gif@webp",
-            "keywords": "[\"Thunderstorm\", \"Rain\", \"Hail\", \"Weather\", \"National Weather Service\", \"Flash flood\", \"Dallas–Fort Worth metroplex\", \"Dallas\", \"Central Texas\", \"Mesquite, Texas\", \"2PM\", \"The Thunder Rolls\", \"Local news\", \"Thunder\", \"Storyful\", \"Meteorologist\"]",
-            "media_url": "https://videos.storyful.com/syfl-26772d25d7867bc2833b5f9b2e471ca6bd1b8d69-original.mp4",
-            "provider_url": "https://x.com/ts_texam/status/1872350247369756895",
-            "published_date": "2024-12-26 20:09:43 UTC",
-            "stated_location": "Dallas, Texas",
-            "story_mark_clearance": "CLEARED",
-            "story_mark_guidance": "",
-            "summary": "A round of thunderstorms hit north and central Texas on Thursday, December 26, bringing heavy rain and hail, thunder and lightning, and a risk of flash flooding, weather officials \"said.\":https://x.com/NWSFortWorth/status/1872307108814999852\n\nThis video shows rain and light hail falling in north Dallas, according to the source.\n\nThe storms were expected move eastward out of the Dallas-Fort Worth area by 2pm, the National Weather Service \"said\":https://x.com/NWSFortWorth/status/1872266112609476875.",
-            "title": "Rain and Hail Dampen Dallas Area",
-            "title_date": "December 26 2024",
-            "title_slug": "US-TX",
-            "total_downloads": "11",
-            "total_views": "35",
-            "unique_downloads": "9",
-            "unique_views": "13"
-          }
-        ]
-      };
-      
-      const mainStory = transformAPIStoryToNewsStory(hardcodedExample.story as unknown as APIStory);
-      const similarStories = hardcodedExample.similar_stories.map(story => 
-        transformAPIStoryToNewsStory(story as unknown as APIStory)
-      );
-      
-      const result = {
-        story: mainStory,
-        similarStories
-      };
-      
-      // Cache this result
-      sessionStorage.setItem(`story_${storyId}`, JSON.stringify(result));
-      sessionStorage.setItem(`story_${storyId}_timestamp`, Date.now().toString());
-      
-      return result;
-    }
-    
-    console.error('No hardcoded or cached data available for this story');
-    return null;
+    // No more hardcoded fallback data - throw error to be handled by components
+    throw new Error(`Failed to fetch story with ID ${storyId}`);
   }
 };
 
@@ -508,7 +313,13 @@ export const getTopStories = async (forceRefresh = false): Promise<NewsStory[]> 
     return apiStories;
   } catch (error) {
     console.error('Error getting top stories:', error);
-    throw error; // Rethrow to handle in component
+    // Return empty array instead of using dummy data
+    toast({
+      title: "Error fetching stories",
+      description: "Could not retrieve stories from the server. Please try again later.",
+      variant: "destructive",
+    });
+    return [];
   }
 };
 
@@ -542,7 +353,8 @@ export const getStoryBySlug = async (slug: string, forceRefresh = false): Promis
     return undefined;
   } catch (error) {
     console.error('Error in getStoryBySlug:', error);
-    throw error; // Rethrow to handle in component
+    // Don't use dummy data, just throw the error
+    throw error;
   }
 };
 
@@ -571,6 +383,7 @@ export const getRecommendedStories = async (storyId?: number, forceRefresh = fal
     return filteredStories.slice(0, 5);
   } catch (error) {
     console.error('Error getting recommended stories:', error);
-    throw error; // Rethrow to handle in component
+    // Return empty array instead of dummy data
+    return [];
   }
 };

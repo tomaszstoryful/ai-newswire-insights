@@ -9,15 +9,15 @@ import StoryDetail from "./pages/StoryDetail";
 import NotFound from "./pages/NotFound";
 import AIAssistant from "./components/ai/AIAssistant";
 
-// Create a new query client with aggressive settings to prevent stale data
+// Create a new query client with extremely aggressive settings to prevent stale data
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       refetchOnWindowFocus: true,
       refetchOnMount: true,
-      staleTime: 5 * 1000, // Consider data stale after just 5 seconds
-      gcTime: 10 * 60 * 1000, // Cache for 10 minutes (formerly cacheTime)
-      retry: 3, // Retry failed requests 3 times
+      staleTime: 0, // Consider all data stale immediately
+      gcTime: 5 * 60 * 1000, // Cache for 5 minutes (formerly cacheTime)
+      retry: 2, // Retry failed requests 2 times
       retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
     },
   },
@@ -30,7 +30,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
+          <Route path="/" element={<Index key="index-route" />} />
           <Route path="/story/:slug" element={<StoryDetail />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

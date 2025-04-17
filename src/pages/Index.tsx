@@ -54,11 +54,15 @@ const Index = () => {
         }
       } else {
         console.log('No videos returned from API');
-        setLoadError('No videos available at this time.');
+        setLoadError('No videos available at this time. Please try again later.');
+        setFeaturedVideo(null);
+        setVideos([]);
       }
     } catch (error) {
       console.error('Error in component when fetching videos:', error);
       setLoadError('Failed to load videos. Please try again later.');
+      setFeaturedVideo(null);
+      setVideos([]);
       
       if (showToast) {
         toast({
@@ -141,7 +145,7 @@ const Index = () => {
   return (
     <Layout>
       <div className="container mx-auto px-4 md:px-6 py-8">
-        {/* AI Insights Section */}
+        {/* AI Insights Section - Only show if featured video exists */}
         {featuredVideo && <AIOverviewSection story={featuredVideo} />}
         
         {/* Available Videos */}
@@ -199,7 +203,16 @@ const Index = () => {
         {!loadError && filteredVideos.length === 0 ? (
           <div className="text-center py-12">
             <h3 className="text-xl font-medium text-newswire-darkGray mb-2">No videos found</h3>
-            <p className="text-newswire-mediumGray">Try adjusting your search criteria</p>
+            <p className="text-newswire-mediumGray mb-4">Try adjusting your search criteria or refreshing</p>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleManualRefresh}
+              disabled={isRefreshing}
+            >
+              <RefreshCw size={14} className={`mr-2 ${isRefreshing ? "animate-spin" : ""}`} />
+              {isRefreshing ? "Refreshing..." : "Refresh"}
+            </Button>
           </div>
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

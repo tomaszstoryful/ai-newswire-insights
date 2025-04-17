@@ -59,12 +59,15 @@ const NewsCard: React.FC<NewsCardProps> = ({ story, variant = 'default', size })
 
   console.log(`NewsCard: Creating link for story ID ${storyId} with title "${story.title}"`);
 
+  // Check for missing image and provide empty string instead of placeholder
+  const hasImage = story.lead_image?.url && story.lead_image.url.trim() !== '';
+
   return (
     <Card className={`overflow-hidden transition-all hover:shadow-md ${isFeatured ? 'md:flex h-full' : ''}`}>
       <Link to={storyLink} className="block h-full">
         <div className={`${isFeatured ? 'md:w-1/2 md:flex-shrink-0' : ''}`}>
           <div className="relative aspect-video bg-newswire-lightGray">
-            {story.lead_image?.url ? (
+            {hasImage ? (
               <img 
                 src={story.lead_image.url} 
                 alt={story.title} 
