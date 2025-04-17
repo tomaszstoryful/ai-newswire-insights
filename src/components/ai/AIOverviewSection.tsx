@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Bot, MessageSquare, Send, Link, ExternalLink, ThumbsUp, ThumbsDown, MessageCircle } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -61,6 +62,11 @@ const AIOverviewSection: React.FC<AIOverviewSectionProps> = ({ story, isStoryDet
       setIsModalOpen(true);
       setInputValue('');
     }
+  };
+
+  const handleOpenModal = () => {
+    setIsModalOpen(true);
+    setInitialModalMessage('');
   };
 
   return (
@@ -172,13 +178,24 @@ const AIOverviewSection: React.FC<AIOverviewSectionProps> = ({ story, isStoryDet
           )}
           
           <div className="mt-6 border-t border-newswire-lightGray pt-4">
-            <div className="flex items-center mb-3">
-              <MessageSquare size={18} className="mr-2 text-newswire-accent" />
-              <h3 className="font-medium flex-grow">
-                {isStoryDetail 
-                  ? "Ask about this story or explore licensing options" 
-                  : "Ask about these insights or explore licensing options"}
-              </h3>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center">
+                <MessageSquare size={18} className="mr-2 text-newswire-accent" />
+                <h3 className="font-medium">
+                  {isStoryDetail 
+                    ? "Ask about this story or explore licensing options" 
+                    : "Ask about these insights or explore licensing options"}
+                </h3>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleOpenModal}
+                className="text-xs font-medium border-newswire-accent text-newswire-accent hover:bg-newswire-accent/10"
+              >
+                <MessageCircle size={14} className="mr-1" />
+                Open AI Chat
+              </Button>
             </div>
             
             <form onSubmit={handleSubmit} className="flex items-center gap-2">
