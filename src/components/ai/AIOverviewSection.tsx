@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Bot, MessageSquare, Send, Link, ExternalLink, ThumbsUp, ThumbsDown, MessageCircle } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -191,14 +190,23 @@ const AIOverviewSection: React.FC<AIOverviewSectionProps> = ({ story, isStoryDet
           <div className="mt-6 border-t border-newswire-lightGray pt-4">
             <div className="flex items-center mb-3">
               <MessageSquare size={18} className="mr-2 text-newswire-accent" />
-              <h3 className="font-medium">
+              <h3 className="font-medium flex-grow">
                 {isStoryDetail 
                   ? "Ask about this story or explore licensing options" 
                   : "Ask about these insights or explore licensing options"}
               </h3>
+              <Button 
+                onClick={openAIAssistant}
+                variant="outline" 
+                size="sm"
+                className="ml-2 text-xs text-newswire-accent border-newswire-accent hover:bg-newswire-accent/10"
+              >
+                <MessageCircle size={14} className="mr-1" />
+                AI Chat
+              </Button>
             </div>
             
-            <form onSubmit={handleSubmit} className="flex gap-2">
+            <form onSubmit={handleSubmit} className="flex items-center gap-2">
               <Input
                 className="flex-grow"
                 placeholder={isStoryDetail 
@@ -207,7 +215,11 @@ const AIOverviewSection: React.FC<AIOverviewSectionProps> = ({ story, isStoryDet
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
               />
-              <Button type="submit" className="bg-newswire-black text-white hover:bg-newswire-darkGray transition-colors">
+              <Button 
+                type="submit" 
+                size="sm"
+                className="bg-newswire-black text-white hover:bg-newswire-darkGray transition-colors"
+              >
                 <Send size={16} />
               </Button>
             </form>
