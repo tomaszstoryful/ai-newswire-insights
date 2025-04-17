@@ -53,7 +53,7 @@ const NewsCard: React.FC<NewsCardProps> = ({ story, variant = 'default', size })
     }
   };
 
-  // Use ID-based route for story details to ensure proper loading
+  // Make sure we're always using the ID for the story link
   const storyLink = `/story/${story.id}`;
 
   return (

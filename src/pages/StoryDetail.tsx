@@ -47,6 +47,7 @@ const StoryDetail = () => {
           if (result) {
             fetchedStory = result.story;
             similarStories = result.similarStories;
+            console.log('Successfully loaded story with ID:', fetchedStory.id, fetchedStory.title);
           }
         } else {
           // Try regular slug lookup
@@ -55,6 +56,7 @@ const StoryDetail = () => {
           // If found, get recommended stories
           if (fetchedStory) {
             similarStories = await getRecommendedStories(fetchedStory.id);
+            console.log('Successfully loaded story with slug:', fetchedStory.slug, fetchedStory.title);
           }
         }
         
