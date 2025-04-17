@@ -1,4 +1,3 @@
-
 import { NewsStory } from '@/types/news';
 
 // Sample news data based on the provided JSON
@@ -164,47 +163,80 @@ export const fetchStoriesFromAPI = async (): Promise<NewsStory[]> => {
   try {
     // Use the updated API endpoint specified by the user
     const apiUrl = 'https://newswire-story-recommendation.staging.storyful.com/api/stories';
-    const corsProxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(apiUrl);
     
-    console.log('Fetching stories from API (with CORS proxy):', corsProxyUrl);
+    // Try different CORS proxy options
+    const corsProxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(apiUrl);
+    
+    console.log('Attempting to fetch stories with alternative CORS proxy:', corsProxyUrl);
     
     const response = await fetch(corsProxyUrl, {
       method: 'GET',
       headers: {
-        'Accept': 'application/json'
-      }
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      cache: 'no-cache'
     });
     
     if (!response.ok) {
-      console.error(`API responded with status: ${response.status}`);
+      console.error(`API responded with status: ${response.status} ${response.statusText}`);
       throw new Error(`API responded with status: ${response.status}`);
     }
     
-    const apiStories = await response.json();
-    console.log('Successfully fetched stories:', apiStories.length);
+    const rawData = await response.text();
+    console.log('Raw API response:', rawData.substring(0, 200) + '...'); // Log first 200 chars
+    
+    let apiStories;
+    try {
+      apiStories = JSON.parse(rawData);
+      console.log('Successfully parsed JSON data:', apiStories.length, 'stories found');
+    } catch (parseError) {
+      console.error('Error parsing JSON response:', parseError);
+      throw new Error('Invalid JSON response from API');
+    }
+    
+    if (!Array.isArray(apiStories)) {
+      console.error('API response is not an array:', typeof apiStories);
+      throw new Error('Expected array of stories but got ' + typeof apiStories);
+    }
+    
+    if (apiStories.length === 0) {
+      console.warn('API returned empty array of stories');
+    } else {
+      console.log('First story from API:', apiStories[0]);
+    }
     
     // Transform API response to match our NewsStory type
     return apiStories.map((story: any) => {
       try {
-        // Parse categories from string to array
-        const categories = story.categories ? JSON.parse(story.categories) : [];
+        // Parse categories from string to array if it's a string
+        let categories = [];
+        try {
+          if (story.categories && typeof story.categories === 'string') {
+            categories = JSON.parse(story.categories);
+          } else if (Array.isArray(story.categories)) {
+            categories = story.categories;
+          }
+        } catch (err) {
+          console.warn('Error parsing categories:', story.categories);
+        }
         
         return {
-          id: parseInt(story.id),
-          title: story.title,
-          slug: story.title_slug || `story-${story.id}`,
+          id: parseInt(story.id) || Math.floor(Math.random() * 100000),
+          title: story.title || 'Untitled Story',
+          slug: story.title_slug || `story-${story.id || Math.random().toString(36).substring(2, 9)}`,
           summary: story.summary || story.extended_summary || "",
-          published_date: story.published_date,
-          updated_at: story.published_date, // Using published_date for updated_at
-          editorial_updated_at: story.published_date, // Using published_date for editorial_updated_at
+          published_date: story.published_date || new Date().toISOString(),
+          updated_at: story.published_date || new Date().toISOString(), // Using published_date for updated_at
+          editorial_updated_at: story.published_date || new Date().toISOString(), // Using published_date for editorial_updated_at
           clearance_mark: story.story_mark_clearance || "PUBLIC",
           in_trending_collection: false,
           lead_image: {
-            url: story.image_url,
+            url: story.image_url || 'https://via.placeholder.com/640x360?text=No+Image',
             filename: story.image_url?.split('/').pop() || 'image.webp'
           },
           lead_item: {
-            id: parseInt(story.id) + 1000, // Creating a unique ID for lead_item
+            id: parseInt(story.id) + 1000 || Math.floor(Math.random() * 100000), // Creating a unique ID for lead_item
             media_button: {
               first_time: true,
               already_downloaded_by_relative: false,
@@ -213,15 +245,81 @@ export const fetchStoriesFromAPI = async (): Promise<NewsStory[]> => {
             resource_type: "video",
             type: "ItemYoutube"
           },
-          regions: categories
+          regions: Array.isArray(categories) ? categories : []
         };
       } catch (parseError) {
-        console.error('Error parsing story data:', parseError, story);
+        console.error('Error transforming story data:', parseError, story);
         return null;
       }
     }).filter(Boolean) as NewsStory[];
   } catch (error) {
     console.error('Error fetching stories from API:', error);
+    
+    // Try an alternative CORS proxy as backup
+    try {
+      console.log('Trying alternative CORS proxy...');
+      const apiUrl = 'https://newswire-story-recommendation.staging.storyful.com/api/stories';
+      const backupProxyUrl = 'https://corsproxy.org/?' + encodeURIComponent(apiUrl);
+      
+      const response = await fetch(backupProxyUrl, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
+        cache: 'no-cache'
+      });
+      
+      if (response.ok) {
+        const apiStories = await response.json();
+        console.log('Successfully fetched stories with backup proxy:', apiStories.length);
+        
+        // Use the same transformation code as above
+        return apiStories.map((story: any) => {
+          try {
+            // Parse categories (same as above)
+            let categories = [];
+            try {
+              if (story.categories && typeof story.categories === 'string') {
+                categories = JSON.parse(story.categories);
+              } else if (Array.isArray(story.categories)) {
+                categories = story.categories;
+              }
+            } catch (err) {}
+            
+            return {
+              id: parseInt(story.id) || Math.floor(Math.random() * 100000),
+              title: story.title || 'Untitled Story',
+              slug: story.title_slug || `story-${story.id}`,
+              summary: story.summary || story.extended_summary || "",
+              published_date: story.published_date || new Date().toISOString(),
+              updated_at: story.published_date || new Date().toISOString(),
+              editorial_updated_at: story.published_date || new Date().toISOString(),
+              clearance_mark: story.story_mark_clearance || "PUBLIC",
+              in_trending_collection: false,
+              lead_image: {
+                url: story.image_url || 'https://via.placeholder.com/640x360?text=No+Image',
+                filename: story.image_url?.split('/').pop() || 'image.webp'
+              },
+              lead_item: {
+                id: parseInt(story.id) + 1000 || Math.floor(Math.random() * 100000),
+                media_button: {
+                  first_time: true,
+                  already_downloaded_by_relative: false,
+                  action: story.media_url || ''
+                },
+                resource_type: "video",
+                type: "ItemYoutube"
+              },
+              regions: Array.isArray(categories) ? categories : []
+            };
+          } catch (parseError) {
+            console.error('Error transforming story data:', parseError, story);
+            return null;
+          }
+        }).filter(Boolean) as NewsStory[];
+      }
+    } catch (backupError) {
+      console.error('Both CORS proxies failed:', backupError);
+    }
+    
     console.log('Falling back to API-based mock data');
     // Fallback to API-based mock data in case of API failure
     return apiBasedMockStories;
