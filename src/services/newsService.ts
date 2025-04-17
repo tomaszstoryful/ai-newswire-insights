@@ -76,7 +76,14 @@ const transformAPIStory = (apiStory: APIStory): NewsStory => {
     collection_headline: '',
     collection_summary_html: '',
     lead_item: {
-      resource_type: 'video'
+      id: parseInt(apiStory.id), // Using the same ID as the story
+      resource_type: 'video',
+      type: 'video', // Required by the interface
+      media_button: {
+        first_time: false,
+        already_downloaded_by_relative: false,
+        action: 'preview'
+      }
     }
   };
 };
