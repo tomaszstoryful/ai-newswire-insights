@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Bot, MessageSquare, Code, ChevronRight, ChevronLeft, ChevronDown, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -141,10 +140,6 @@ const AINewsModal: React.FC<AINewsModalProps> = ({ open, onClose, initialMessage
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <Button variant="ghost" size="icon" onClick={onClose} className="hover:bg-newswire-lightGray/50 transition-colors">
-                <X size={18} />
-                <span className="sr-only">Close</span>
-              </Button>
             </div>
           </div>
           
