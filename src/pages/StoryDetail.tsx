@@ -12,12 +12,15 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import AIAssistant from '@/components/ai/AIAssistant';
+import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from '@/components/ui/use-toast';
 
 const StoryDetail = () => {
   const { slug } = useParams<{ slug: string }>();
   const [story, setStory] = useState<NewsStory | null>(null);
   const [recommendedStories, setRecommendedStories] = useState<NewsStory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const minutes = getRandomInt(2, 15);
   const seconds = getRandomInt(10, 59);
@@ -29,15 +32,35 @@ const StoryDetail = () => {
       
       try {
         setLoading(true);
+        setError(null);
+        console.log(`Fetching story with slug: ${slug}`);
+        
         const fetchedStory = await getStoryBySlug(slug);
         
         if (fetchedStory) {
+          console.log('Successfully fetched story:', fetchedStory);
           setStory(fetchedStory);
+          
+          // Fetch recommended/similar stories
           const recommended = await getRecommendedStories(fetchedStory.id);
           setRecommendedStories(recommended);
+        } else {
+          console.error('No story found for slug:', slug);
+          setError('Story not found');
+          toast({
+            title: "Story not found",
+            description: "The requested story could not be found.",
+            variant: "destructive",
+          });
         }
       } catch (error) {
         console.error('Error fetching story:', error);
+        setError('Failed to load the story');
+        toast({
+          title: "Error loading story",
+          description: "There was a problem loading the story. Please try again.",
+          variant: "destructive",
+        });
       } finally {
         setLoading(false);
       }
@@ -82,15 +105,56 @@ const StoryDetail = () => {
     return (
       <Layout>
         <div className="container mx-auto px-4 md:px-6 py-8">
-          <div className="animate-pulse">
-            <div className="h-10 bg-newswire-lightGray rounded w-3/4 mb-4"></div>
-            <div className="h-4 bg-newswire-lightGray rounded w-1/4 mb-6"></div>
-            <div className="h-96 bg-newswire-lightGray rounded mb-6"></div>
-            <div className="space-y-3">
-              <div className="h-4 bg-newswire-lightGray rounded"></div>
-              <div className="h-4 bg-newswire-lightGray rounded"></div>
-              <div className="h-4 bg-newswire-lightGray rounded w-3/4"></div>
-              <div className="h-4 bg-newswire-lightGray rounded"></div>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div className="lg:col-span-8">
+              <div className="animate-pulse">
+                <div className="flex flex-wrap items-center gap-4 mb-4">
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="w-2 h-2 rounded-full" />
+                  <Skeleton className="h-4 w-32" />
+                </div>
+                
+                <Skeleton className="h-12 w-3/4 mb-2" />
+                <Skeleton className="h-12 w-1/2 mb-6" />
+                
+                <div className="flex flex-wrap items-center gap-4 mb-3">
+                  <Skeleton className="h-5 w-32" />
+                  <Skeleton className="h-5 w-24" />
+                  <Skeleton className="h-5 w-40" />
+                </div>
+                
+                <div className="flex gap-3 mb-6">
+                  <Skeleton className="h-10 w-32" />
+                  <Skeleton className="h-10 w-36" />
+                  <Skeleton className="h-10 w-24" />
+                </div>
+                
+                <Skeleton className="h-96 w-full mb-6" />
+                
+                <div className="space-y-3 mb-8">
+                  <Skeleton className="h-6 w-48" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-5/6" />
+                </div>
+                
+                <Skeleton className="h-64 w-full mb-8" />
+                
+                <Skeleton className="h-2 w-full mb-8" />
+                
+                <Skeleton className="h-96 w-full" />
+              </div>
+            </div>
+            
+            <div className="lg:col-span-4">
+              <Skeleton className="h-8 w-48 mb-4" />
+              <div className="space-y-4">
+                {[...Array(4)].map((_, i) => (
+                  <Skeleton key={i} className="h-32 w-full" />
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -98,7 +162,7 @@ const StoryDetail = () => {
     );
   }
 
-  if (!story) {
+  if (error || !story) {
     return (
       <Layout>
         <div className="container mx-auto px-4 md:px-6 py-16 text-center">
@@ -142,10 +206,10 @@ const StoryDetail = () => {
                   <Clock size={16} className="mr-1" />
                   <span>{durationString}</span>
                 </div>
-                {story?.place_id && (
+                {story?.stated_location && (
                   <div className="flex items-center">
                     <MapPin size={16} className="mr-1" />
-                    <span>Hartford, Connecticut</span>
+                    <span>{story.stated_location}</span>
                   </div>
                 )}
                 <div>

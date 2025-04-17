@@ -1,4 +1,4 @@
-import { NewsStory } from '@/types/news';
+import { NewsStory, APIStoryResponse, APIStory } from '@/types/news';
 
 // Sample news data based on the provided JSON
 const sampleStory: NewsStory = {
@@ -158,6 +158,55 @@ const generateApiBasedStories = (): NewsStory[] => {
 // Use the simulated API stories as a fallback
 const apiBasedMockStories = generateApiBasedStories();
 
+// Function to transform API story data to our NewsStory format
+export const transformAPIStoryToNewsStory = (apiStory: APIStory): NewsStory => {
+  try {
+    // Parse categories from string to array
+    let categories = [];
+    try {
+      if (apiStory.categories && typeof apiStory.categories === 'string') {
+        categories = JSON.parse(apiStory.categories);
+      } else if (Array.isArray(apiStory.categories)) {
+        categories = apiStory.categories;
+      }
+    } catch (err) {
+      console.warn('Error parsing categories:', apiStory.categories);
+    }
+    
+    return {
+      id: parseInt(apiStory.id) || Math.floor(Math.random() * 100000),
+      title: apiStory.title || 'Untitled Story',
+      slug: apiStory.title_slug || `story-${apiStory.id}`,
+      summary: apiStory.summary || apiStory.extended_summary || "",
+      published_date: apiStory.published_date || new Date().toISOString(),
+      updated_at: apiStory.published_date || new Date().toISOString(), // Using published_date for updated_at
+      editorial_updated_at: apiStory.published_date || new Date().toISOString(), // Using published_date for editorial_updated_at
+      clearance_mark: apiStory.story_mark_clearance || "PUBLIC",
+      in_trending_collection: false,
+      lead_image: {
+        url: apiStory.image_url || 'https://via.placeholder.com/640x360?text=No+Image',
+        filename: apiStory.image_url?.split('/').pop() || 'image.webp'
+      },
+      lead_item: {
+        id: parseInt(apiStory.id) + 1000 || Math.floor(Math.random() * 100000), // Creating a unique ID for lead_item
+        media_button: {
+          first_time: true,
+          already_downloaded_by_relative: false,
+          action: apiStory.media_url || ''
+        },
+        resource_type: "video",
+        type: "ItemYoutube"
+      },
+      regions: Array.isArray(categories) ? categories : [],
+      stated_location: apiStory.stated_location,
+      media_url: apiStory.media_url
+    };
+  } catch (parseError) {
+    console.error('Error transforming story data:', parseError, apiStory);
+    return null as unknown as NewsStory;
+  }
+};
+
 // Function to fetch stories from the provided API endpoint
 export const fetchStoriesFromAPI = async (): Promise<NewsStory[]> => {
   try {
@@ -209,7 +258,7 @@ export const fetchStoriesFromAPI = async (): Promise<NewsStory[]> => {
     // Transform API response to match our NewsStory type
     return apiStories.map((story: any) => {
       try {
-        // Parse categories from string to array if it's a string
+        // Parse categories (same as above)
         let categories = [];
         try {
           if (story.categories && typeof story.categories === 'string') {
@@ -217,9 +266,7 @@ export const fetchStoriesFromAPI = async (): Promise<NewsStory[]> => {
           } else if (Array.isArray(story.categories)) {
             categories = story.categories;
           }
-        } catch (err) {
-          console.warn('Error parsing categories:', story.categories);
-        }
+        } catch (err) {}
         
         return {
           id: parseInt(story.id) || Math.floor(Math.random() * 100000),
@@ -227,8 +274,8 @@ export const fetchStoriesFromAPI = async (): Promise<NewsStory[]> => {
           slug: story.title_slug || `story-${story.id || Math.random().toString(36).substring(2, 9)}`,
           summary: story.summary || story.extended_summary || "",
           published_date: story.published_date || new Date().toISOString(),
-          updated_at: story.published_date || new Date().toISOString(), // Using published_date for updated_at
-          editorial_updated_at: story.published_date || new Date().toISOString(), // Using published_date for editorial_updated_at
+          updated_at: story.published_date || new Date().toISOString(),
+          editorial_updated_at: story.published_date || new Date().toISOString(),
           clearance_mark: story.story_mark_clearance || "PUBLIC",
           in_trending_collection: false,
           lead_image: {
@@ -236,7 +283,7 @@ export const fetchStoriesFromAPI = async (): Promise<NewsStory[]> => {
             filename: story.image_url?.split('/').pop() || 'image.webp'
           },
           lead_item: {
-            id: parseInt(story.id) + 1000 || Math.floor(Math.random() * 100000), // Creating a unique ID for lead_item
+            id: parseInt(story.id) + 1000 || Math.floor(Math.random() * 100000),
             media_button: {
               first_time: true,
               already_downloaded_by_relative: false,
@@ -287,7 +334,7 @@ export const fetchStoriesFromAPI = async (): Promise<NewsStory[]> => {
             return {
               id: parseInt(story.id) || Math.floor(Math.random() * 100000),
               title: story.title || 'Untitled Story',
-              slug: story.title_slug || `story-${story.id}`,
+              slug: story.title_slug || `story-${story.id || Math.random().toString(36).substring(2, 9)}`,
               summary: story.summary || story.extended_summary || "",
               published_date: story.published_date || new Date().toISOString(),
               updated_at: story.published_date || new Date().toISOString(),
@@ -326,6 +373,106 @@ export const fetchStoriesFromAPI = async (): Promise<NewsStory[]> => {
   }
 };
 
+// New function to fetch individual story by ID
+export const fetchStoryById = async (storyId: string | number): Promise<{ story: NewsStory, similarStories: NewsStory[] } | null> => {
+  console.log(`Fetching story with ID: ${storyId}`);
+  
+  try {
+    // Use the new API endpoint for individual stories
+    const apiUrl = `https://newswire-story-recommendation.staging.storyful.com/api/stories/${storyId}`;
+    
+    // Try different CORS proxy options
+    const corsProxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(apiUrl);
+    
+    console.log('Attempting to fetch individual story with CORS proxy:', corsProxyUrl);
+    
+    const response = await fetch(corsProxyUrl, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      cache: 'no-cache'
+    });
+    
+    if (!response.ok) {
+      console.error(`API responded with status: ${response.status} ${response.statusText}`);
+      throw new Error(`API responded with status: ${response.status}`);
+    }
+    
+    const rawData = await response.text();
+    console.log('Raw API response for story:', rawData.substring(0, 200) + '...'); // Log first 200 chars
+    
+    let apiResponse: APIStoryResponse;
+    try {
+      apiResponse = JSON.parse(rawData);
+      console.log('Successfully parsed JSON story data:', apiResponse);
+    } catch (parseError) {
+      console.error('Error parsing JSON response:', parseError);
+      throw new Error('Invalid JSON response from API');
+    }
+    
+    if (!apiResponse.story) {
+      console.error('API response does not contain a story:', apiResponse);
+      throw new Error('No story found in API response');
+    }
+    
+    // Transform API response to match our NewsStory type
+    const mainStory = transformAPIStoryToNewsStory(apiResponse.story);
+    
+    // Transform similar stories
+    const similarStories = apiResponse.similar_stories.map(story => 
+      transformAPIStoryToNewsStory(story)
+    ).filter(Boolean);
+    
+    console.log('Transformed story:', mainStory);
+    console.log(`Transformed ${similarStories.length} similar stories`);
+    
+    return { 
+      story: mainStory,
+      similarStories
+    };
+  } catch (error) {
+    console.error('Error fetching story by ID:', error);
+    
+    // Try an alternative CORS proxy as backup
+    try {
+      console.log('Trying alternative CORS proxy for story...');
+      const apiUrl = `https://newswire-story-recommendation.staging.storyful.com/api/stories/${storyId}`;
+      const backupProxyUrl = 'https://corsproxy.org/?' + encodeURIComponent(apiUrl);
+      
+      const response = await fetch(backupProxyUrl, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
+        cache: 'no-cache'
+      });
+      
+      if (response.ok) {
+        const apiResponse = await response.json();
+        console.log('Successfully fetched story with backup proxy:', apiResponse);
+        
+        // Use the same transformation code as above
+        const mainStory = transformAPIStoryToNewsStory(apiResponse.story);
+        const similarStories = apiResponse.similar_stories.map((story: APIStory) => 
+          transformAPIStoryToNewsStory(story)
+        ).filter(Boolean);
+        
+        return { 
+          story: mainStory,
+          similarStories
+        };
+      }
+    } catch (backupError) {
+      console.error('Both CORS proxies failed for story:', backupError);
+    }
+    
+    // If no API data, fallback to mock data
+    console.log('Falling back to mock data for story');
+    return null;
+  }
+};
+
+// Function to fetch top stories
 export const getTopStories = async (): Promise<NewsStory[]> => {
   console.log('Getting top stories...');
   try {
@@ -338,20 +485,75 @@ export const getTopStories = async (): Promise<NewsStory[]> => {
   }
 };
 
-export const getStoryBySlug = (slug: string): Promise<NewsStory | undefined> => {
-  return Promise.resolve(mockStories.find(story => story.slug === slug));
+// Function to fetch story by slug
+export const getStoryBySlug = async (slug: string): Promise<NewsStory | undefined> => {
+  try {
+    console.log(`Getting story by slug: ${slug}`);
+    
+    // If the slug is a number ID, use it directly
+    if (/^\d+$/.test(slug)) {
+      const result = await fetchStoryById(slug);
+      if (result && result.story) {
+        return result.story;
+      }
+    }
+    
+    // Otherwise, extract ID from slug if possible (like US-TX might be title_slug for story ID 317273)
+    // First check if we can find the story in mock data
+    const mockStory = mockStories.find(story => story.slug === slug);
+    if (mockStory) {
+      try {
+        // Try fetching the real data using the mock story's ID
+        const result = await fetchStoryById(mockStory.id);
+        if (result && result.story) {
+          return result.story;
+        }
+      } catch (error) {
+        console.log('Failed to fetch using mock ID, returning mock story');
+        return mockStory;
+      }
+    }
+    
+    // If couldn't match slug, fall back to mock data
+    return mockStories.find(story => story.slug === slug);
+  } catch (error) {
+    console.error('Error in getStoryBySlug:', error);
+    return mockStories.find(story => story.slug === slug);
+  }
 };
 
-export const getRecommendedStories = (storyId?: number): Promise<NewsStory[]> => {
-  // Return 5 random stories, except the current one
-  const filtered = storyId 
-    ? mockStories.filter(story => story.id !== storyId)
-    : mockStories;
-  
-  const shuffled = [...filtered].sort(() => 0.5 - Math.random());
-  return Promise.resolve(shuffled.slice(0, 5));
+// Function to fetch recommended stories
+export const getRecommendedStories = async (storyId?: number): Promise<NewsStory[]> => {
+  try {
+    if (storyId) {
+      // Try to get similar stories from the API
+      const result = await fetchStoryById(storyId);
+      if (result && result.similarStories && result.similarStories.length > 0) {
+        return result.similarStories;
+      }
+    }
+    
+    // Fallback to mock data
+    const filtered = storyId 
+      ? mockStories.filter(story => story.id !== storyId)
+      : mockStories;
+    
+    const shuffled = [...filtered].sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, 5);
+  } catch (error) {
+    console.error('Error getting recommended stories:', error);
+    
+    // Fall back to mock data
+    const filtered = storyId 
+      ? mockStories.filter(story => story.id !== storyId)
+      : mockStories;
+      
+    const shuffled = [...filtered].sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, 5);
+  }
 };
 
+// Function to fetch latest stories
 export const getLatestStories = (): Promise<NewsStory[]> => {
   // Sort by published date and return latest
   return Promise.resolve([...mockStories].sort(
@@ -359,6 +561,7 @@ export const getLatestStories = (): Promise<NewsStory[]> => {
   ).slice(0, 5));
 };
 
+// Function to fetch trending stories
 export const getTrendingStories = (): Promise<NewsStory[]> => {
   // For mock data, just return some random stories
   return Promise.resolve([...mockStories].sort(() => 0.5 - Math.random()).slice(0, 3));
