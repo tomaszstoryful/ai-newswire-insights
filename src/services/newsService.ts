@@ -55,6 +55,13 @@ export const fetchStoriesFromAPI = async (forceRefresh = false): Promise<NewsSto
   try {
     console.log('Fetching stories from API with forceRefresh =', forceRefresh);
     
+    // Always clear the cache in session storage when forcing refresh
+    if (forceRefresh) {
+      sessionStorage.removeItem('cachedStories');
+      sessionStorage.removeItem('storiesTimestamp');
+      console.log('Cleared story cache due to forceRefresh');
+    }
+    
     // Use the updated API endpoint
     const apiUrl = 'https://newswire-story-recommendation.staging.storyful.com/api/stories';
     
@@ -63,7 +70,6 @@ export const fetchStoriesFromAPI = async (forceRefresh = false): Promise<NewsSto
     
     console.log('Attempting to fetch stories with CORS proxy:', corsProxyUrl);
     
-    const cacheOption = forceRefresh ? 'no-store' : 'no-cache';
     const timestamp = Date.now(); // Add timestamp to bust cache
     
     const response = await fetch(`${corsProxyUrl}&_t=${timestamp}`, {
@@ -71,8 +77,11 @@ export const fetchStoriesFromAPI = async (forceRefresh = false): Promise<NewsSto
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
       },
-      cache: cacheOption as RequestCache
+      cache: 'no-store' as RequestCache // Always prioritize network request
     });
     
     if (!response.ok) {
@@ -128,8 +137,13 @@ export const fetchStoriesFromAPI = async (forceRefresh = false): Promise<NewsSto
       const timestamp = Date.now(); // Add timestamp to bust cache
       const response = await fetch(`${backupProxyUrl}&_t=${timestamp}`, {
         method: 'GET',
-        headers: { 'Accept': 'application/json' },
-        cache: forceRefresh ? 'no-store' : 'no-cache' as RequestCache
+        headers: { 
+          'Accept': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        },
+        cache: 'no-store' as RequestCache // Always use network request
       });
       
       if (response.ok) {
@@ -160,13 +174,16 @@ export const fetchStoriesFromAPI = async (forceRefresh = false): Promise<NewsSto
         const age = Date.now() - parseInt(timestamp);
         console.log(`Found cached stories, ${Math.round(age / 1000)} seconds old`);
         
-        // Only use cache if it's less than 5 minutes old and we're not forcing refresh
-        if (age < 5 * 60 * 1000 && !forceRefresh) {
+        // Only use cache if it's less than 1 minute old
+        if (age < 60 * 1000) {
           const cachedStories = JSON.parse(cachedStoriesJson) as NewsStory[];
           console.log(`Using ${cachedStories.length} cached stories`);
           return cachedStories;
         } else {
-          console.log('Cached stories too old or force refresh requested');
+          console.log('Cached stories too old');
+          // Clear old cache
+          sessionStorage.removeItem('cachedStories');
+          sessionStorage.removeItem('storiesTimestamp');
         }
       } else {
         console.log('No cached stories found in sessionStorage');
@@ -175,66 +192,10 @@ export const fetchStoriesFromAPI = async (forceRefresh = false): Promise<NewsSto
       console.error('Error accessing cached stories:', cacheError);
     }
     
-    // Last resort - hardcoded sample data
-    console.error('All API attempts failed, using hardcoded sample data');
-    
-    // Use the array of actual API data (not the mock stories)
-    const hardcodedApiStories = [
-      {
-        "categories":"[\"US\", \"news & politics\"]",
-        "channels":"[\"MRSS Licensed\", \"Viral\", \"Licensed\"]",
-        "collections":"[]",
-        "extended_summary":"Footage filmed by Spencer White shows the funnel spinning near Sam Bishkin Road on Thursday afternoon.\n\nAccording to the Wharton County Office of Emergency Management, the tornado damaged multiple barns as it touched down near Highway 59. There were no injuries reported.",
-        "id":"317273",
-        "image_url":"https://img.news.storyful.com/stories/317273/rt:fill/el:1/s:495:250/original.gif@webp",
-        "keywords":"[\"Social media\", \"Tornado\", \"Google Maps\", \"Office of Emergency Management\", \"Chimney\", \"U.S. Route 59\", \"Wharton County, Texas\", \"Uniform Resource Locator\", \"Storyful\", \"El Campo, Texas\", \"Local insertion\"]",
-        "media_url":"https://videos.storyful.com/syfl-71dbddba8a15e4015c89eadb1aff8671d5d812b3-original.mp4",
-        "provider_url":"https://www.youtube.com/watch?v=qljyTulWMms",
-        "published_date":"2024-12-27 03:40:58 UTC",
-        "stated_location":"El Campo, Texas",
-        "story_mark_clearance":"LICENSED",
-        "story_mark_guidance":"",
-        "summary":"A tornado touched down in El Campo, Texas, damaging structures and whipping up dust on December 26.\n\nFootage filmed by Spencer White shows the funnel spinning near Sam Bishkin Road on Thursday afternoon.\n\nAccording to the Wharton County Office of Emergency Management, the tornado damaged multiple barns as it touched down near Highway 59. There were no injuries reported.",
-        "title":"Tornado Spotted Swirling Over El Campo",
-        "title_date":"December 26 2024",
-        "title_slug":"US-TX",
-        "total_downloads":"1",
-        "total_views":"11",
-        "unique_downloads":"1",
-        "unique_views":"4"
-      },
-      {
-        "categories":"[\"Australia\", \"Human Interest\"]",
-        "channels":"[\"MRSS Licensed\", \"Viral\", \"Licensed\"]",
-        "collections":"[]",
-        "extended_summary":"Footage filmed by Matt Roberts shows his neighbor moving his mower toward the reptile on Thursday afternoon. Roberts' neighbors said they were concerned for the safety of children living in the area, so they contacted a local snake catcher.\n\nSpeaking to Storyful, Roberts said that the snake was eventually captured humanely by a wildlife removal service and relocated.",
-        "id":"317285",
-        "image_url":"https://img.news.storyful.com/stories/317285/rt:fill/el:1/s:495:250/original.gif@webp",
-        "keywords":"[\"Reptile\", \"Snake catcher\", \"Lawn mower\", \"Snake\", \"Neighbor\", \"Storyful\", \"Australia\", \"Eastern brown snake\", \"Service animal\", \"Lawn\"]",
-        "media_url":"https://videos.storyful.com/syfl-d7f67d83fd3d1faa9c301cba5c8ba5f30efb6b11-original.mp4",
-        "provider_url":"https://www.youtube.com/watch?v=DdmhkL04UHE",
-        "published_date":"2024-12-26 23:35:08 UTC",
-        "stated_location":"Moruya, New South Wales, Australia",
-        "story_mark_clearance":"LICENSED",
-        "story_mark_guidance":"",
-        "summary":"A homeowner in Moruya, New South Wales, had a close encounter with a venomous eastern brown snake while mowing his lawn on December 19.\n\nFootage filmed by Matt Roberts shows his neighbor moving his mower toward the reptile on Thursday afternoon. Roberts' neighbors said they were concerned for the safety of children living in the area, so they contacted a local snake catcher.\n\nSpeaking to Storyful, Roberts said that the snake was eventually captured humanely by a wildlife removal service and relocated.",
-        "title":"Venomous Eastern Brown Snake Stops Man From Mowing Lawn in New South Wales",
-        "title_date":"December 19 2024",
-        "title_slug":"AU-NSW",
-        "total_downloads":"2",
-        "total_views":"11",
-        "unique_downloads":"2",
-        "unique_views":"6"
-      }
-    ];
-    
-    // Transform the hardcoded stories
-    const transformedHardcodedStories = hardcodedApiStories.map((story: any) => {
-      return transformAPIStoryToNewsStory(story);
-    });
-    
-    console.log(`Returning ${transformedHardcodedStories.length} hardcoded stories as last resort`);
-    return transformedHardcodedStories;
+    // We have COMPLETELY eliminated the hardcoded sample data fallback
+    // Instead, throw an error to indicate failure
+    console.error('All API attempts failed, throwing error');
+    throw new Error('Failed to fetch stories from API and no valid cache found');
   }
 };
 
@@ -243,6 +204,12 @@ export const fetchStoryById = async (storyId: string | number, forceRefresh = fa
   console.log(`Fetching story with ID: ${storyId}, forceRefresh: ${forceRefresh}`);
   
   try {
+    // If forceRefresh, clear the story-specific cache
+    if (forceRefresh) {
+      sessionStorage.removeItem(`story_${storyId}`);
+      sessionStorage.removeItem(`story_${storyId}_timestamp`);
+    }
+    
     // Check cache first if not forcing refresh
     if (!forceRefresh) {
       const cachedStoryJson = sessionStorage.getItem(`story_${storyId}`);
@@ -252,12 +219,15 @@ export const fetchStoryById = async (storyId: string | number, forceRefresh = fa
         const age = Date.now() - parseInt(timestamp);
         console.log(`Found cached story ${storyId}, ${Math.round(age / 1000)} seconds old`);
         
-        // Only use cache if it's less than 5 minutes old
-        if (age < 5 * 60 * 1000) {
+        // Only use cache if it's less than 1 minute old (reduced from 5 minutes)
+        if (age < 60 * 1000) {
           console.log('Using cached story data');
           return JSON.parse(cachedStoryJson);
         } else {
           console.log('Cached story too old');
+          // Remove old cache
+          sessionStorage.removeItem(`story_${storyId}`);
+          sessionStorage.removeItem(`story_${storyId}_timestamp`);
         }
       }
     }
@@ -276,8 +246,11 @@ export const fetchStoryById = async (storyId: string | number, forceRefresh = fa
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
       },
-      cache: forceRefresh ? 'no-store' : 'no-cache' as RequestCache
+      cache: 'no-store' as RequestCache // Always use network request
     });
     
     if (!response.ok) {
@@ -355,147 +328,8 @@ export const fetchStoryById = async (storyId: string | number, forceRefresh = fa
       console.error('Error checking cached stories for story:', cacheError);
     }
     
-    // If it's story ID 317273 or 317285, use the hardcoded example data
-    if (storyId === '317273' || storyId === 317273) {
-      console.log('Using hardcoded data for tornado story ID 317273');
-      const hardcodedExample = {
-        "story": {
-          "categories": "[\"US\", \"news & politics\"]",
-          "channels": "[\"MRSS Licensed\", \"Viral\", \"Licensed\"]",
-          "collections": "[]",
-          "extended_summary": "Footage filmed by Spencer White shows the funnel spinning near Sam Bishkin Road on Thursday afternoon.\n\nAccording to the \"\nWharton County Office of Emergency Management\":https://www.facebook.com/permalink.php?story_fbid=612586047964256&id=100076385977807, the tornado damaged multiple barns as it touched down near Highway 59. There were no injuries reported.",
-          "id": "317273",
-          "image_url": "https://img.news.storyful.com/stories/317273/rt:fill/el:1/s:495:250/original.gif@webp",
-          "keywords": "[\"Social media\", \"Tornado\", \"Google Maps\", \"Office of Emergency Management\", \"Chimney\", \"U.S. Route 59\", \"Wharton County, Texas\", \"Uniform Resource Locator\", \"Storyful\", \"El Campo, Texas\", \"Local insertion\"]",
-          "media_url": "https://videos.storyful.com/syfl-71dbddba8a15e4015c89eadb1aff8671d5d812b3-original.mp4",
-          "provider_url": "https://www.youtube.com/watch?v=qljyTulWMms",
-          "published_date": "2024-12-27 03:40:58 UTC",
-          "stated_location": "El Campo, Texas",
-          "story_mark_clearance": "LICENSED",
-          "story_mark_guidance": "",
-          "summary": "A tornado \"touched down\":https://www.facebook.com/permalink.php?story_fbid=612586047964256&id=100076385977807 in El Campo, Texas, damaging structures and whipping up dust on December 26.\n\nFootage filmed by Spencer White shows the funnel spinning near Sam Bishkin Road on Thursday afternoon.\n\nAccording to the \"\nWharton County Office of Emergency Management\":https://www.facebook.com/permalink.php?story_fbid=612586047964256&id=100076385977807, the tornado damaged multiple barns as it touched down near Highway 59. There were no injuries reported.",
-          "title": "Tornado Spotted Swirling Over El Campo",
-          "title_date": "December 26 2024",
-          "title_slug": "US-TX",
-          "total_downloads": "1",
-          "total_views": "11",
-          "unique_downloads": "1",
-          "unique_views": "4"
-        },
-        "similar_stories": [
-          {
-            "categories": "[\"weather\", \"others\", \"storms\"]",
-            "channels": "[]",
-            "collections": "[\"US Weather\"]",
-            "extended_summary": "This video shows rain and light hail falling in north Dallas, according to the source.\n\nThe storms were expected move eastward out of the Dallas-Fort Worth area by 2pm, the National Weather Service \"said\":https://x.com/NWSFortWorth/status/1872266112609476875.",
-            "id": "317266",
-            "image_url": "https://img.news.storyful.com/stories/317266/rt:fill/el:1/s:495:250/original.gif@webp",
-            "keywords": "[\"Thunderstorm\", \"Rain\", \"Hail\", \"Weather\", \"National Weather Service\", \"Flash flood\", \"Dallas–Fort Worth metroplex\", \"Dallas\", \"Central Texas\", \"Mesquite, Texas\", \"2PM\", \"The Thunder Rolls\", \"Local news\", \"Thunder\", \"Storyful\", \"Meteorologist\"]",
-            "media_url": "https://videos.storyful.com/syfl-26772d25d7867bc2833b5f9b2e471ca6bd1b8d69-original.mp4",
-            "provider_url": "https://x.com/ts_texam/status/1872350247369756895",
-            "published_date": "2024-12-26 20:09:43 UTC",
-            "stated_location": "Dallas, Texas",
-            "story_mark_clearance": "CLEARED",
-            "story_mark_guidance": "",
-            "summary": "A round of thunderstorms hit north and central Texas on Thursday, December 26, bringing heavy rain and hail, thunder and lightning, and a risk of flash flooding, weather officials \"said.\":https://x.com/NWSFortWorth/status/1872307108814999852\n\nThis video shows rain and light hail falling in north Dallas, according to the source.\n\nThe storms were expected move eastward out of the Dallas-Fort Worth area by 2pm, the National Weather Service \"said\":https://x.com/NWSFortWorth/status/1872266112609476875.",
-            "title": "Rain and Hail Dampen Dallas Area",
-            "title_date": "December 26 2024",
-            "title_slug": "US-TX",
-            "total_downloads": "11",
-            "total_views": "35",
-            "unique_downloads": "9",
-            "unique_views": "13"
-          }
-        ]
-      };
-      
-      const mainStory = transformAPIStoryToNewsStory(hardcodedExample.story as unknown as APIStory);
-      const similarStories = hardcodedExample.similar_stories.map(story => 
-        transformAPIStoryToNewsStory(story as unknown as APIStory)
-      );
-      
-      const result = {
-        story: mainStory,
-        similarStories
-      };
-      
-      // Cache this result
-      sessionStorage.setItem(`story_${storyId}`, JSON.stringify(result));
-      sessionStorage.setItem(`story_${storyId}_timestamp`, Date.now().toString());
-      
-      return result;
-    } else if (storyId === '317285' || storyId === 317285) {
-      console.log('Using hardcoded data for snake story ID 317285');
-      const hardcodedExample = {
-        "story": {
-          "categories": "[\"Australia\", \"Human Interest\"]",
-          "channels": "[\"MRSS Licensed\", \"Viral\", \"Licensed\"]",
-          "collections": "[]",
-          "extended_summary": "Footage filmed by Matt Roberts shows his neighbor moving his mower toward the reptile on Thursday afternoon. Roberts' neighbors said they were concerned for the safety of children living in the area, so they contacted a local snake catcher.\n\nSpeaking to Storyful, Roberts said that the snake was eventually captured humanely by a wildlife removal service and relocated.",
-          "id": "317285",
-          "image_url": "https://img.news.storyful.com/stories/317285/rt:fill/el:1/s:495:250/original.gif@webp",
-          "keywords": "[\"Reptile\", \"Snake catcher\", \"Lawn mower\", \"Snake\", \"Neighbor\", \"Storyful\", \"Australia\", \"Eastern brown snake\", \"Service animal\", \"Lawn\"]",
-          "media_url": "https://videos.storyful.com/syfl-d7f67d83fd3d1faa9c301cba5c8ba5f30efb6b11-original.mp4",
-          "provider_url": "https://www.youtube.com/watch?v=DdmhkL04UHE",
-          "published_date": "2024-12-26 23:35:08 UTC",
-          "stated_location": "Moruya, New South Wales, Australia",
-          "story_mark_clearance": "LICENSED",
-          "story_mark_guidance": "",
-          "summary": "A homeowner in Moruya, New South Wales, had a close encounter with a venomous eastern brown snake while mowing his lawn on December 19.\n\nFootage filmed by Matt Roberts shows his neighbor moving his mower toward the reptile on Thursday afternoon. Roberts' neighbors said they were concerned for the safety of children living in the area, so they contacted a local snake catcher.\n\nSpeaking to Storyful, Roberts said that the snake was eventually captured humanely by a wildlife removal service and relocated.",
-          "title": "Venomous Eastern Brown Snake Stops Man From Mowing Lawn in New South Wales",
-          "title_date": "December 19 2024",
-          "title_slug": "AU-NSW",
-          "total_downloads": "2",
-          "total_views": "11",
-          "unique_downloads": "2",
-          "unique_views": "6"
-        },
-        "similar_stories": [
-          {
-            "categories": "[\"weather\", \"others\", \"storms\"]",
-            "channels": "[]",
-            "collections": "[\"US Weather\"]",
-            "extended_summary": "This video shows rain and light hail falling in north Dallas, according to the source.\n\nThe storms were expected move eastward out of the Dallas-Fort Worth area by 2pm, the National Weather Service \"said\":https://x.com/NWSFortWorth/status/1872266112609476875.",
-            "id": "317266",
-            "image_url": "https://img.news.storyful.com/stories/317266/rt:fill/el:1/s:495:250/original.gif@webp",
-            "keywords": "[\"Thunderstorm\", \"Rain\", \"Hail\", \"Weather\", \"National Weather Service\", \"Flash flood\", \"Dallas–Fort Worth metroplex\", \"Dallas\", \"Central Texas\", \"Mesquite, Texas\", \"2PM\", \"The Thunder Rolls\", \"Local news\", \"Thunder\", \"Storyful\", \"Meteorologist\"]",
-            "media_url": "https://videos.storyful.com/syfl-26772d25d7867bc2833b5f9b2e471ca6bd1b8d69-original.mp4",
-            "provider_url": "https://x.com/ts_texam/status/1872350247369756895",
-            "published_date": "2024-12-26 20:09:43 UTC",
-            "stated_location": "Dallas, Texas",
-            "story_mark_clearance": "CLEARED",
-            "story_mark_guidance": "",
-            "summary": "A round of thunderstorms hit north and central Texas on Thursday, December 26, bringing heavy rain and hail, thunder and lightning, and a risk of flash flooding, weather officials \"said.\":https://x.com/NWSFortWorth/status/1872307108814999852\n\nThis video shows rain and light hail falling in north Dallas, according to the source.\n\nThe storms were expected move eastward out of the Dallas-Fort Worth area by 2pm, the National Weather Service \"said\":https://x.com/NWSFortWorth/status/1872266112609476875.",
-            "title": "Rain and Hail Dampen Dallas Area",
-            "title_date": "December 26 2024",
-            "title_slug": "US-TX",
-            "total_downloads": "11",
-            "total_views": "35",
-            "unique_downloads": "9",
-            "unique_views": "13"
-          }
-        ]
-      };
-      
-      const mainStory = transformAPIStoryToNewsStory(hardcodedExample.story as unknown as APIStory);
-      const similarStories = hardcodedExample.similar_stories.map(story => 
-        transformAPIStoryToNewsStory(story as unknown as APIStory)
-      );
-      
-      const result = {
-        story: mainStory,
-        similarStories
-      };
-      
-      // Cache this result
-      sessionStorage.setItem(`story_${storyId}`, JSON.stringify(result));
-      sessionStorage.setItem(`story_${storyId}_timestamp`, Date.now().toString());
-      
-      return result;
-    }
-    
-    console.error('No hardcoded or cached data available for this story');
-    return null;
+    // No fallback to hardcoded data - just throw an error
+    throw new Error(`Failed to fetch story with ID ${storyId}`);
   }
 };
 
@@ -503,7 +337,8 @@ export const fetchStoryById = async (storyId: string | number, forceRefresh = fa
 export const getTopStories = async (forceRefresh = false): Promise<NewsStory[]> => {
   console.log('Getting top stories with forceRefresh =', forceRefresh);
   try {
-    const apiStories = await fetchStoriesFromAPI(forceRefresh);
+    // When on home page, ALWAYS force a refresh
+    const apiStories = await fetchStoriesFromAPI(true);
     console.log(`Retrieved ${apiStories.length} stories`);
     return apiStories;
   } catch (error) {
@@ -526,8 +361,8 @@ export const getStoryBySlug = async (slug: string, forceRefresh = false): Promis
       }
     }
     
-    // Try to get all stories first
-    const allStories = await getTopStories(forceRefresh);
+    // Try to get all stories first with a forced refresh
+    const allStories = await getTopStories(true);
     
     // Check if any story matches this slug
     const matchingStory = allStories.find(s => s.slug === slug || s.id.toString() === slug);
@@ -559,9 +394,9 @@ export const getRecommendedStories = async (storyId?: number, forceRefresh = fal
       }
     }
     
-    // Fallback to getting top stories
+    // Fallback to getting top stories with forced refresh
     console.log('No similar stories found, using top stories instead');
-    const allStories = await getTopStories(forceRefresh);
+    const allStories = await getTopStories(true);
     
     // Filter out the current story if needed
     const filteredStories = storyId 
