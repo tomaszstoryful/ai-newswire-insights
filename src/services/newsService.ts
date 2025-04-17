@@ -1,3 +1,4 @@
+
 import { NewsStory } from '@/types/news';
 
 // API URL
@@ -46,6 +47,34 @@ export const getTopStories = async (): Promise<NewsStory[]> => {
     console.error('Error fetching stories:', error);
     return []; // Return empty array on error
   }
+};
+
+// Define a sample story for generating mock data
+const sampleStory: NewsStory = {
+  id: 322510,
+  title: "Sample News Story",
+  slug: "sample-news-story",
+  summary: "This is a sample news story used for generating mock data. In a real implementation, this would contain actual story content.",
+  published_date: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+  editorial_updated_at: new Date().toISOString(),
+  clearance_mark: "PUBLIC",
+  in_trending_collection: false,
+  lead_image: {
+    url: "https://img.news.storyful.com/stories/317273/rt:fill/el:1/s:495:250/original.gif@webp",
+    filename: "sample.webp"
+  },
+  lead_item: {
+    id: 322510,
+    media_button: {
+      first_time: true,
+      already_downloaded_by_relative: false,
+      action: "https://videos.storyful.com/sample-video.mp4"
+    },
+    resource_type: "video",
+    type: "ItemYoutube"
+  },
+  regions: ["Global", "News"]
 };
 
 // Generate some mock news stories based on the sample
