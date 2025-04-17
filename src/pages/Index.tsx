@@ -6,10 +6,11 @@ import NewsCardSkeleton from '@/components/news/NewsCardSkeleton';
 import { NewsStory } from '@/types/news';
 import { getTopStories } from '@/services/newsService';
 import { Button } from '@/components/ui/button';
-import { Search, Filter } from 'lucide-react';
+import { Search, Filter, RefreshCw, AlertCircle } from 'lucide-react';
 import AIOverviewSection from '@/components/ai/AIOverviewSection';
 import AIAssistant from '@/components/ai/AIAssistant';
 import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from '@/components/ui/use-toast';
 
 const Index = () => {
   const [featuredVideo, setFeaturedVideo] = useState<NewsStory | null>(null);
@@ -17,32 +18,58 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const fetchVideos = async (showToast = false) => {
+    try {
+      console.log('Starting to fetch videos...');
+      if (showToast) {
+        setIsRefreshing(true);
+        toast({
+          title: "Refreshing stories",
+          description: "Fetching the latest stories for you...",
+        });
+      } else {
+        setLoading(true);
+      }
+      
+      setLoadError(null);
+      
+      const allVideos = await getTopStories();
+      console.log('Fetched videos:', allVideos.length);
+      
+      if (allVideos.length > 0) {
+        setFeaturedVideo(allVideos[0]);
+        setVideos(allVideos.slice(1));
+        
+        if (showToast) {
+          toast({
+            title: "Stories refreshed",
+            description: `Loaded ${allVideos.length} stories successfully.`,
+          });
+        }
+      } else {
+        console.log('No videos returned from API');
+        setLoadError('No videos available at this time.');
+      }
+    } catch (error) {
+      console.error('Error in component when fetching videos:', error);
+      setLoadError('Failed to load videos. Please try again later.');
+      
+      if (showToast) {
+        toast({
+          title: "Error refreshing stories",
+          description: "There was a problem fetching the latest stories.",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setLoading(false);
+      setIsRefreshing(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchVideos = async () => {
-      try {
-        console.log('Starting to fetch videos...');
-        setLoading(true);
-        setLoadError(null);
-        
-        const allVideos = await getTopStories();
-        console.log('Fetched videos:', allVideos.length);
-        
-        if (allVideos.length > 0) {
-          setFeaturedVideo(allVideos[0]);
-          setVideos(allVideos.slice(1));
-        } else {
-          console.log('No videos returned from API');
-          setLoadError('No videos available at this time.');
-        }
-      } catch (error) {
-        console.error('Error in component when fetching videos:', error);
-        setLoadError('Failed to load videos. Please try again later.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchVideos();
   }, []);
 
@@ -106,17 +133,39 @@ const Index = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <Button variant="outline" size="sm" className="text-xs flex items-center gap-1">
-              <Filter size={14} />
-              Filters
-            </Button>
+            <div className="flex items-center space-x-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="text-xs flex items-center gap-1"
+                onClick={() => fetchVideos(true)}
+                disabled={isRefreshing}
+              >
+                <RefreshCw size={14} className={isRefreshing ? "animate-spin" : ""} />
+                {isRefreshing ? "Refreshing..." : "Refresh"}
+              </Button>
+              <Button variant="outline" size="sm" className="text-xs flex items-center gap-1">
+                <Filter size={14} />
+                Filters
+              </Button>
+            </div>
           </div>
         </div>
         
         {loadError && (
           <div className="text-center py-12 bg-red-50 rounded-lg">
+            <AlertCircle size={40} className="mx-auto text-red-500 mb-2" />
             <h3 className="text-xl font-medium text-red-700 mb-2">{loadError}</h3>
-            <p className="text-newswire-mediumGray">Try refreshing the page or check back later</p>
+            <p className="text-newswire-mediumGray mb-4">Try refreshing the page or check back later</p>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => fetchVideos(true)}
+              disabled={isRefreshing}
+            >
+              <RefreshCw size={14} className={`mr-2 ${isRefreshing ? "animate-spin" : ""}`} />
+              {isRefreshing ? "Refreshing..." : "Try Again"}
+            </Button>
           </div>
         )}
         

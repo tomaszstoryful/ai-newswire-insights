@@ -67,20 +67,112 @@ const generateMockStories = (): NewsStory[] => {
 
 const mockStories = generateMockStories();
 
+// Generate real-looking stories from the sample API response format
+const generateApiBasedStories = (): NewsStory[] => {
+  const apiSampleData = [
+    {
+      "categories": "[\"US\", \"news & politics\"]",
+      "channels": "[\"MRSS Licensed\", \"Viral\", \"Licensed\"]",
+      "collections": "[]",
+      "extended_summary": "Footage filmed by Spencer White shows the funnel spinning near Sam Bishkin Road on Thursday afternoon.\n\nAccording to the Wharton County Office of Emergency Management, the tornado damaged multiple barns as it touched down near Highway 59. There were no injuries reported.",
+      "id": "317273",
+      "image_url": "https://img.news.storyful.com/stories/317273/rt:fill/el:1/s:495:250/original.gif@webp",
+      "keywords": "[\"Social media\", \"Tornado\", \"Google Maps\", \"Office of Emergency Management\", \"Chimney\", \"U.S. Route 59\", \"Wharton County, Texas\", \"Uniform Resource Locator\", \"Storyful\", \"El Campo, Texas\", \"Local insertion\"]",
+      "media_url": "https://videos.storyful.com/syfl-71dbddba8a15e4015c89eadb1aff8671d5d812b3-original.mp4",
+      "provider_url": "https://www.youtube.com/watch?v=qljyTulWMms",
+      "published_date": "2024-12-27 03:40:58 UTC",
+      "stated_location": "El Campo, Texas",
+      "story_mark_clearance": "LICENSED",
+      "story_mark_guidance": "",
+      "summary": "A tornado touched down in El Campo, Texas, damaging structures and whipping up dust on December 26.\n\nFootage filmed by Spencer White shows the funnel spinning near Sam Bishkin Road on Thursday afternoon.\n\nAccording to the Wharton County Office of Emergency Management, the tornado damaged multiple barns as it touched down near Highway 59. There were no injuries reported.",
+      "title": "Tornado Spotted Swirling Over El Campo",
+      "title_date": "December 26 2024",
+      "title_slug": "US-TX",
+      "total_downloads": "1",
+      "total_views": "11",
+      "unique_downloads": "1",
+      "unique_views": "4"
+    },
+    {
+      "categories": "[\"Australia\", \"Human Interest\"]",
+      "channels": "[\"MRSS Licensed\", \"Viral\", \"Licensed\"]",
+      "collections": "[]",
+      "extended_summary": "Footage filmed by Matt Roberts shows his neighbor moving his mower toward the reptile on Thursday afternoon. Roberts' neighbors said they were concerned for the safety of children living in the area, so they contacted a local snake catcher.\n\nSpeaking to Storyful, Roberts said that the snake was eventually captured humanely by a wildlife removal service and relocated.",
+      "id": "317285",
+      "image_url": "https://img.news.storyful.com/stories/317285/rt:fill/el:1/s:495:250/original.gif@webp",
+      "keywords": "[\"Reptile\", \"Snake catcher\", \"Lawn mower\", \"Snake\", \"Neighbor\", \"Storyful\", \"Australia\", \"Eastern brown snake\", \"Service animal\", \"Lawn\"]",
+      "media_url": "https://videos.storyful.com/syfl-d7f67d83fd3d1faa9c301cba5c8ba5f30efb6b11-original.mp4",
+      "provider_url": "https://www.youtube.com/watch?v=DdmhkL04UHE",
+      "published_date": "2024-12-26 23:35:08 UTC",
+      "stated_location": "Moruya, New South Wales, Australia",
+      "story_mark_clearance": "LICENSED",
+      "story_mark_guidance": "",
+      "summary": "A homeowner in Moruya, New South Wales, had a close encounter with a venomous eastern brown snake while mowing his lawn on December 19.\n\nFootage filmed by Matt Roberts shows his neighbor moving his mower toward the reptile on Thursday afternoon. Roberts' neighbors said they were concerned for the safety of children living in the area, so they contacted a local snake catcher.\n\nSpeaking to Storyful, Roberts said that the snake was eventually captured humanely by a wildlife removal service and relocated.",
+      "title": "Venomous Eastern Brown Snake Stops Man From Mowing Lawn in New South Wales",
+      "title_date": "December 19 2024",
+      "title_slug": "AU-NSW",
+      "total_downloads": "2",
+      "total_views": "11",
+      "unique_downloads": "2",
+      "unique_views": "6"
+    }
+  ];
+
+  return apiSampleData.map((story, index) => {
+    try {
+      // Parse categories from string to array
+      const categories = story.categories ? JSON.parse(story.categories) : [];
+      
+      return {
+        id: parseInt(story.id),
+        title: story.title,
+        slug: story.title_slug || `story-${story.id}`,
+        summary: story.summary || story.extended_summary || "",
+        published_date: story.published_date,
+        updated_at: story.published_date, // Using published_date for updated_at
+        editorial_updated_at: story.published_date, // Using published_date for editorial_updated_at
+        clearance_mark: story.story_mark_clearance || "PUBLIC",
+        in_trending_collection: false,
+        lead_image: {
+          url: story.image_url,
+          filename: story.image_url?.split('/').pop() || 'image.webp'
+        },
+        lead_item: {
+          id: parseInt(story.id) + 1000, // Creating a unique ID for lead_item
+          media_button: {
+            first_time: true,
+            already_downloaded_by_relative: false,
+            action: story.media_url || ''
+          },
+          resource_type: "video",
+          type: "ItemYoutube"
+        },
+        regions: categories
+      };
+    } catch (parseError) {
+      console.error('Error parsing story data:', parseError, story);
+      return null;
+    }
+  }).filter(Boolean) as NewsStory[];
+};
+
+// Use the simulated API stories as a fallback
+const apiBasedMockStories = generateApiBasedStories();
+
 // Function to fetch stories from the provided API endpoint
 export const fetchStoriesFromAPI = async (): Promise<NewsStory[]> => {
   try {
-    // Use CORS proxy for development to avoid CORS issues
+    // Use a CORS proxy for development to avoid CORS issues
     const apiUrl = 'https://newswire-story-recommendation.staging.storyful.com/api/stories';
-    console.log('Fetching stories from API:', apiUrl);
+    const corsProxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(apiUrl);
     
-    const response = await fetch(apiUrl, {
+    console.log('Fetching stories from API (with CORS proxy):', corsProxyUrl);
+    
+    const response = await fetch(corsProxyUrl, {
       method: 'GET',
       headers: {
-        'Content-Type': 'application/json',
         'Accept': 'application/json'
-      },
-      mode: 'cors'
+      }
     });
     
     if (!response.ok) {
@@ -130,9 +222,9 @@ export const fetchStoriesFromAPI = async (): Promise<NewsStory[]> => {
     }).filter(Boolean) as NewsStory[];
   } catch (error) {
     console.error('Error fetching stories from API:', error);
-    // Fallback to mock data in case of API failure
-    console.log('Falling back to mock data');
-    return mockStories;
+    console.log('Falling back to API-based mock data');
+    // Fallback to API-based mock data in case of API failure
+    return apiBasedMockStories;
   }
 };
 
@@ -144,7 +236,7 @@ export const getTopStories = async (): Promise<NewsStory[]> => {
     return apiStories;
   } catch (error) {
     console.error('Error getting top stories:', error);
-    return mockStories;
+    return apiBasedMockStories; // Use API-based mock stories as fallback
   }
 };
 
