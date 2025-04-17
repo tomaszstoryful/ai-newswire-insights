@@ -67,8 +67,60 @@ const generateMockStories = (): NewsStory[] => {
 
 const mockStories = generateMockStories();
 
-export const getTopStories = (): Promise<NewsStory[]> => {
-  return Promise.resolve(mockStories);
+// New function to fetch stories from the API
+export const fetchStoriesFromAPI = async (): Promise<NewsStory[]> => {
+  try {
+    const response = await fetch('https://newswire-story-recommendation.staging.storyful.com/api/stories');
+    
+    if (!response.ok) {
+      throw new Error(`API responded with status: ${response.status}`);
+    }
+    
+    const apiStories = await response.json();
+    
+    // Transform API response to match our NewsStory type
+    return apiStories.map((story: any) => {
+      return {
+        id: parseInt(story.id),
+        title: story.title,
+        slug: story.title_slug,
+        summary: story.summary,
+        published_date: story.published_date,
+        updated_at: story.published_date, // Using published_date for updated_at
+        editorial_updated_at: story.published_date, // Using published_date for editorial_updated_at
+        clearance_mark: story.story_mark_clearance,
+        in_trending_collection: false,
+        lead_image: {
+          url: story.image_url,
+          filename: story.image_url.split('/').pop() || 'image.webp'
+        },
+        lead_item: {
+          id: parseInt(story.id) + 1000, // Creating a unique ID for lead_item
+          media_button: {
+            first_time: true,
+            already_downloaded_by_relative: false,
+            action: story.media_url || ''
+          },
+          resource_type: "video",
+          type: "ItemYoutube"
+        },
+        regions: story.categories ? JSON.parse(story.categories) : []
+      };
+    });
+  } catch (error) {
+    console.error('Error fetching stories from API:', error);
+    // Fallback to mock data in case of API failure
+    return mockStories;
+  }
+};
+
+export const getTopStories = async (): Promise<NewsStory[]> => {
+  try {
+    return await fetchStoriesFromAPI();
+  } catch (error) {
+    console.error('Error getting top stories:', error);
+    return mockStories;
+  }
 };
 
 export const getStoryBySlug = (slug: string): Promise<NewsStory | undefined> => {
