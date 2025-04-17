@@ -10,7 +10,7 @@ import { formatDate, getRandomInt } from '@/lib/utils';
 interface NewsCardProps {
   story: NewsStory;
   variant?: 'default' | 'compact' | 'featured';
-  size?: string;  // Added size prop to match what's being passed in Index.tsx
+  size?: string;
 }
 
 const NewsCard: React.FC<NewsCardProps> = ({ story, variant = 'default', size }) => {
@@ -53,8 +53,9 @@ const NewsCard: React.FC<NewsCardProps> = ({ story, variant = 'default', size })
     }
   };
 
-  // Make sure we're always using the ID for the story link
-  const storyLink = `/story/${story.id}`;
+  // IMPORTANT: Always use the numeric ID for the link
+  const storyId = story.id.toString();
+  const storyLink = `/story/${storyId}`;
 
   return (
     <Card className={`overflow-hidden transition-all hover:shadow-md ${isFeatured ? 'md:flex h-full' : ''}`}>

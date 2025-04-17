@@ -11,6 +11,7 @@ import AIOverviewSection from '@/components/ai/AIOverviewSection';
 import AIAssistant from '@/components/ai/AIAssistant';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/use-toast';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const Index = () => {
   const [featuredVideo, setFeaturedVideo] = useState<NewsStory | null>(null);
@@ -19,6 +20,8 @@ const Index = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const fetchVideos = async (showToast = false) => {
     try {
@@ -69,9 +72,25 @@ const Index = () => {
     }
   };
 
+  // Re-fetch data when navigating back to this page
   useEffect(() => {
+    // Always fetch data when this component mounts
     fetchVideos();
-  }, []);
+    
+    // Attach an event listener for navigation events
+    const handleRouteChange = () => {
+      if (location.pathname === '/') {
+        console.log('Back on home page, refreshing data...');
+        fetchVideos();
+      }
+    };
+    
+    window.addEventListener('popstate', handleRouteChange);
+    
+    return () => {
+      window.removeEventListener('popstate', handleRouteChange);
+    };
+  }, [location.pathname]);
 
   // Filter videos based on search term
   const filteredVideos = videos.filter(video => 
