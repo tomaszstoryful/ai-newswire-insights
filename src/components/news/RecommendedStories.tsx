@@ -28,15 +28,17 @@ const RecommendedStories: React.FC<RecommendedStoriesProps> = ({ stories, curren
       </div>
       <div className="divide-y divide-newswire-lightGray">
         {filteredStories.map((story) => {
-          // Generate a random video duration for demo purposes
           const minutes = getRandomInt(1, 8);
           const seconds = getRandomInt(10, 59);
           const durationString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
           
+          // CRITICAL: Use numeric ID for consistent navigation
+          const storyLink = `/story/${story.id}`;
+          
           return (
             <Link 
               key={story.id} 
-              to={`/story/${story.slug}`}
+              to={storyLink}
               className="block hover:bg-newswire-lightGray/20 transition-colors group"
             >
               <div className="flex gap-3 p-4">
@@ -67,19 +69,17 @@ const RecommendedStories: React.FC<RecommendedStoriesProps> = ({ stories, curren
                       <Calendar size={10} className="mr-1" />
                       {formatDate(story.published_date)}
                     </div>
-                    {story.clearance_mark && (
-                      <Badge 
-                        variant="outline" 
-                        className={cn(
-                          "text-[9px] h-4 px-1.5 font-medium",
-                          story.clearance_mark === "LICENSED" ? "border-emerald-500 text-emerald-600" :
-                          story.clearance_mark === "RESTRICTED" ? "border-amber-500 text-amber-600" :
-                          "border-blue-500 text-blue-600"
-                        )}
-                      >
-                        {story.clearance_mark}
-                      </Badge>
-                    )}
+                    <Badge 
+                      variant="outline" 
+                      className={cn(
+                        "text-[9px] h-4 px-1.5 font-medium",
+                        story.clearance_mark === "LICENSED" ? "border-emerald-500 text-emerald-600" :
+                        story.clearance_mark === "RESTRICTED" ? "border-amber-500 text-amber-600" :
+                        "border-blue-500 text-blue-600"
+                      )}
+                    >
+                      {story.clearance_mark}
+                    </Badge>
                   </div>
                 </div>
                 <div className="flex self-center opacity-0 group-hover:opacity-100 transition-opacity">

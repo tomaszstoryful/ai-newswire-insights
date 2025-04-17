@@ -1,389 +1,111 @@
+import { APIStory, APIStoryResponse, NewsStory } from '@/types/news';
 
-import { NewsStory, APIStoryResponse, APIStory } from '@/types/news';
-import { toast } from '@/components/ui/use-toast';
+const API_BASE_URL = 'https://api.allorigins.win/raw?url=';
+const API_ENDPOINT = 'https://newswire-story-recommendation.staging.storyful.com/api/stories';
 
-// Function to transform API story data to our NewsStory format
-export const transformAPIStoryToNewsStory = (apiStory: APIStory): NewsStory => {
-  try {
-    // Parse categories from string to array
-    let categories = [];
-    try {
-      if (apiStory.categories && typeof apiStory.categories === 'string') {
-        categories = JSON.parse(apiStory.categories);
-      } else if (Array.isArray(apiStory.categories)) {
-        categories = apiStory.categories;
-      }
-    } catch (err) {
-      console.warn('Error parsing categories:', apiStory.categories);
-    }
-    
-    return {
-      id: parseInt(apiStory.id) || Math.floor(Math.random() * 100000),
-      title: apiStory.title || 'Untitled Story',
-      slug: apiStory.title_slug || `story-${apiStory.id}`,
-      summary: apiStory.summary || apiStory.extended_summary || "",
-      published_date: apiStory.published_date || new Date().toISOString(),
-      updated_at: apiStory.published_date || new Date().toISOString(),
-      editorial_updated_at: apiStory.published_date || new Date().toISOString(),
-      clearance_mark: apiStory.story_mark_clearance || "PUBLIC",
-      in_trending_collection: false,
-      lead_image: {
-        url: apiStory.image_url || '',
-        filename: apiStory.image_url?.split('/').pop() || 'image.webp'
-      },
-      lead_item: {
-        id: parseInt(apiStory.id) + 1000 || Math.floor(Math.random() * 100000),
-        media_button: {
-          first_time: true,
-          already_downloaded_by_relative: false,
-          action: apiStory.media_url || ''
-        },
-        resource_type: "video",
-        type: "ItemYoutube"
-      },
-      regions: Array.isArray(categories) ? categories : [],
-      stated_location: apiStory.stated_location,
-      media_url: apiStory.media_url
-    };
-  } catch (parseError) {
-    console.error('Error transforming story data:', parseError, apiStory);
-    return null as unknown as NewsStory;
+// Utility function to handle errors
+const handleErrors = async (response: Response) => {
+  if (!response.ok) {
+    const message = `HTTP error! Status: ${response.status}`;
+    console.error(message);
+    throw new Error(message);
   }
+  return response;
 };
 
-// Function to fetch stories from the provided API endpoint - CORE FUNCTION
-export const fetchStoriesFromAPI = async (forceRefresh = false): Promise<NewsStory[]> => {
+// Function to fetch data from the API
+const fetchData = async <T>(url: string): Promise<T> => {
   try {
-    console.log('Fetching stories from API with forceRefresh =', forceRefresh);
-    
-    // Use the updated API endpoint
-    const apiUrl = 'https://newswire-story-recommendation.staging.storyful.com/api/stories';
-    
-    // Try different CORS proxy options
-    const corsProxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(apiUrl);
-    
-    console.log('Attempting to fetch stories with CORS proxy:', corsProxyUrl);
-    
-    const cacheOption = forceRefresh ? 'no-store' : 'no-cache';
-    const timestamp = Date.now(); // Add timestamp to bust cache
-    
-    const response = await fetch(`${corsProxyUrl}&_t=${timestamp}`, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-      },
-      cache: cacheOption as RequestCache
-    });
-    
-    if (!response.ok) {
-      console.error(`API responded with status: ${response.status} ${response.statusText}`);
-      throw new Error(`API responded with status: ${response.status}`);
-    }
-    
-    const rawData = await response.text();
-    console.log('Raw API response length:', rawData.length);
-    
-    let apiStories;
-    try {
-      apiStories = JSON.parse(rawData);
-      console.log('Successfully parsed JSON data:', apiStories.length, 'stories found');
-    } catch (parseError) {
-      console.error('Error parsing JSON response:', parseError);
-      throw new Error('Invalid JSON response from API');
-    }
-    
-    if (!Array.isArray(apiStories)) {
-      console.error('API response is not an array:', typeof apiStories);
-      throw new Error('Expected array of stories but got ' + typeof apiStories);
-    }
-    
-    if (apiStories.length === 0) {
-      console.warn('API returned empty array of stories');
-      throw new Error('API returned empty array');
-    } else {
-      console.log('First story from API:', apiStories[0].title);
-    }
-    
-    // Transform API response to match our NewsStory type
-    const transformedStories = apiStories.map((story: any) => {
-      return transformAPIStoryToNewsStory(story);
-    }).filter(Boolean) as NewsStory[];
-    
-    console.log(`Successfully transformed ${transformedStories.length} stories`);
-    
-    // Store the stories in sessionStorage to avoid dummy data on navigation
-    sessionStorage.setItem('cachedStories', JSON.stringify(transformedStories));
-    sessionStorage.setItem('storiesTimestamp', Date.now().toString());
-    
-    return transformedStories;
+    const response = await fetch(url);
+    await handleErrors(response);
+    return await response.json();
   } catch (error) {
-    console.error('Error in primary fetch method:', error);
-    
-    // Try an alternative CORS proxy
-    try {
-      console.log('Trying alternative CORS proxy...');
-      const apiUrl = 'https://newswire-story-recommendation.staging.storyful.com/api/stories';
-      const backupProxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(apiUrl);
-      
-      const timestamp = Date.now(); // Add timestamp to bust cache
-      const response = await fetch(`${backupProxyUrl}&_t=${timestamp}`, {
-        method: 'GET',
-        headers: { 'Accept': 'application/json' },
-        cache: forceRefresh ? 'no-store' : 'no-cache' as RequestCache
-      });
-      
-      if (response.ok) {
-        const apiStories = await response.json();
-        console.log('Successfully fetched stories with backup proxy:', apiStories.length);
-        
-        // Transform and cache
-        const transformedStories = apiStories.map((story: any) => {
-          return transformAPIStoryToNewsStory(story);
-        }).filter(Boolean) as NewsStory[];
-        
-        // Store in sessionStorage
-        sessionStorage.setItem('cachedStories', JSON.stringify(transformedStories));
-        sessionStorage.setItem('storiesTimestamp', Date.now().toString());
-        
-        return transformedStories;
-      }
-    } catch (backupError) {
-      console.error('Backup CORS proxy failed:', backupError);
-    }
-    
-    // Check if we have cached stories in sessionStorage
-    try {
-      const cachedStoriesJson = sessionStorage.getItem('cachedStories');
-      const timestamp = sessionStorage.getItem('storiesTimestamp');
-      
-      if (cachedStoriesJson && timestamp) {
-        const age = Date.now() - parseInt(timestamp);
-        console.log(`Found cached stories, ${Math.round(age / 1000)} seconds old`);
-        
-        // Only use cache if it's less than 5 minutes old and we're not forcing refresh
-        if (age < 5 * 60 * 1000 && !forceRefresh) {
-          const cachedStories = JSON.parse(cachedStoriesJson) as NewsStory[];
-          console.log(`Using ${cachedStories.length} cached stories`);
-          return cachedStories;
-        } else {
-          console.log('Cached stories too old or force refresh requested');
-        }
-      } else {
-        console.log('No cached stories found in sessionStorage');
-      }
-    } catch (cacheError) {
-      console.error('Error accessing cached stories:', cacheError);
-    }
-    
-    // Instead of hardcoded data, return empty array and let component handle the display
-    console.error('All API attempts failed, returning empty array');
-    throw new Error('Failed to fetch stories from any source');
-  }
-};
-
-// Function to fetch individual story by ID
-export const fetchStoryById = async (storyId: string | number, forceRefresh = false): Promise<{ story: NewsStory, similarStories: NewsStory[] } | null> => {
-  console.log(`Fetching story with ID: ${storyId}, forceRefresh: ${forceRefresh}`);
-  
-  try {
-    // Check cache first if not forcing refresh
-    if (!forceRefresh) {
-      const cachedStoryJson = sessionStorage.getItem(`story_${storyId}`);
-      const timestamp = sessionStorage.getItem(`story_${storyId}_timestamp`);
-      
-      if (cachedStoryJson && timestamp) {
-        const age = Date.now() - parseInt(timestamp);
-        console.log(`Found cached story ${storyId}, ${Math.round(age / 1000)} seconds old`);
-        
-        // Only use cache if it's less than 5 minutes old
-        if (age < 5 * 60 * 1000) {
-          console.log('Using cached story data');
-          return JSON.parse(cachedStoryJson);
-        } else {
-          console.log('Cached story too old');
-        }
-      }
-    }
-    
-    // Use the API endpoint for individual stories
-    const apiUrl = `https://newswire-story-recommendation.staging.storyful.com/api/stories/${storyId}`;
-    
-    // Try different CORS proxy options
-    const corsProxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(apiUrl);
-    
-    console.log('Attempting to fetch individual story with CORS proxy:', corsProxyUrl);
-    
-    const timestamp = Date.now(); // Add timestamp to bust cache
-    const response = await fetch(`${corsProxyUrl}&_t=${timestamp}`, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-      },
-      cache: forceRefresh ? 'no-store' : 'no-cache' as RequestCache
-    });
-    
-    if (!response.ok) {
-      console.error(`API responded with status: ${response.status} ${response.statusText}`);
-      throw new Error(`API responded with status: ${response.status}`);
-    }
-    
-    const rawData = await response.text();
-    console.log('Raw API response for story, length:', rawData.length);
-    
-    let apiResponse: APIStoryResponse;
-    try {
-      apiResponse = JSON.parse(rawData);
-      console.log('Successfully parsed JSON story data:', apiResponse.story?.title);
-    } catch (parseError) {
-      console.error('Error parsing JSON response:', parseError);
-      throw new Error('Invalid JSON response from API');
-    }
-    
-    if (!apiResponse.story) {
-      console.error('API response does not contain a story:', apiResponse);
-      throw new Error('No story found in API response');
-    }
-    
-    // Transform API response to match our NewsStory type
-    const mainStory = transformAPIStoryToNewsStory(apiResponse.story);
-    
-    // Transform similar stories
-    const similarStories = apiResponse.similar_stories?.map(story => 
-      transformAPIStoryToNewsStory(story)
-    ).filter(Boolean) || [];
-    
-    console.log('Transformed story:', mainStory.title);
-    console.log(`Transformed ${similarStories.length} similar stories`);
-    
-    const result = { 
-      story: mainStory,
-      similarStories
-    };
-    
-    // Cache the result
-    sessionStorage.setItem(`story_${storyId}`, JSON.stringify(result));
-    sessionStorage.setItem(`story_${storyId}_timestamp`, Date.now().toString());
-    
-    return result;
-  } catch (error) {
-    console.error('Error fetching story by ID:', error);
-    
-    // Check if we have this story in our all-stories cache
-    try {
-      const cachedStoriesJson = sessionStorage.getItem('cachedStories');
-      if (cachedStoriesJson) {
-        const cachedStories = JSON.parse(cachedStoriesJson) as NewsStory[];
-        const matchingStory = cachedStories.find(s => s.id.toString() === storyId.toString());
-        
-        if (matchingStory) {
-          console.log('Found story in cached stories collection:', matchingStory.title);
-          const similarStories = cachedStories
-            .filter(s => s.id.toString() !== storyId.toString())
-            .slice(0, 3);
-            
-          const result = {
-            story: matchingStory,
-            similarStories
-          };
-          
-          // Cache this result
-          sessionStorage.setItem(`story_${storyId}`, JSON.stringify(result));
-          sessionStorage.setItem(`story_${storyId}_timestamp`, Date.now().toString());
-          
-          return result;
-        }
-      }
-    } catch (cacheError) {
-      console.error('Error checking cached stories for story:', cacheError);
-    }
-    
-    // No more hardcoded fallback data - throw error to be handled by components
-    throw new Error(`Failed to fetch story with ID ${storyId}`);
-  }
-};
-
-// Function to fetch top stories
-export const getTopStories = async (forceRefresh = false): Promise<NewsStory[]> => {
-  console.log('Getting top stories with forceRefresh =', forceRefresh);
-  try {
-    const apiStories = await fetchStoriesFromAPI(forceRefresh);
-    console.log(`Retrieved ${apiStories.length} stories`);
-    return apiStories;
-  } catch (error) {
-    console.error('Error getting top stories:', error);
-    // Return empty array instead of using dummy data
-    toast({
-      title: "Error fetching stories",
-      description: "Could not retrieve stories from the server. Please try again later.",
-      variant: "destructive",
-    });
-    return [];
-  }
-};
-
-// Function to fetch story by slug
-export const getStoryBySlug = async (slug: string, forceRefresh = false): Promise<NewsStory | undefined> => {
-  try {
-    console.log(`Getting story by slug: ${slug}, forceRefresh: ${forceRefresh}`);
-    
-    // Check if the slug itself is a numeric ID
-    if (/^\d+$/.test(slug)) {
-      console.log(`Slug "${slug}" is a numeric ID, fetching directly`);
-      const result = await fetchStoryById(slug, forceRefresh);
-      if (result && result.story) {
-        return result.story;
-      }
-    }
-    
-    // Try to get all stories first
-    const allStories = await getTopStories(forceRefresh);
-    
-    // Check if any story matches this slug
-    const matchingStory = allStories.find(s => s.slug === slug || s.id.toString() === slug);
-    
-    if (matchingStory) {
-      console.log(`Found matching story with slug/id "${slug}": ${matchingStory.title}`);
-      return matchingStory;
-    }
-    
-    // If no match found, return undefined
-    console.warn(`No story found with slug: ${slug}`);
-    return undefined;
-  } catch (error) {
-    console.error('Error in getStoryBySlug:', error);
-    // Don't use dummy data, just throw the error
+    console.error('Fetch error:', error);
     throw error;
   }
 };
 
-// Function to fetch recommended stories
-export const getRecommendedStories = async (storyId?: number, forceRefresh = false): Promise<NewsStory[]> => {
+const getApiUrl = (endpoint: string) => {
+  return `${API_BASE_URL}${encodeURIComponent(endpoint)}&_t=${Date.now()}`;
+};
+
+export const getStoryBySlug = async (slug: string): Promise<NewsStory | undefined> => {
   try {
-    if (storyId) {
-      // Try to get similar stories from the API
-      console.log(`Fetching recommended stories for story ID: ${storyId}`);
-      const result = await fetchStoryById(storyId, forceRefresh);
-      if (result && result.similarStories && result.similarStories.length > 0) {
-        console.log(`Found ${result.similarStories.length} similar stories from API`);
-        return result.similarStories;
+    const apiUrl = getApiUrl(`${API_ENDPOINT}/${slug}`);
+    const apiStory = await fetchData<APIStory>(apiUrl);
+    return transformAPIStory(apiStory);
+  } catch (error) {
+    console.error('Error fetching story by slug:', error);
+    return undefined;
+  }
+};
+
+export const getRecommendedStories = async (storyId: number): Promise<NewsStory[]> => {
+  try {
+    const apiUrl = getApiUrl(`${API_ENDPOINT}/${storyId}/recommendations`);
+    const apiStories = await fetchData<APIStory[]>(apiUrl);
+    return apiStories.map(transformAPIStory);
+  } catch (error) {
+    console.error('Error fetching recommended stories:', error);
+    return [];
+  }
+};
+
+const transformAPIStory = (apiStory: APIStory): NewsStory => {
+  return {
+    id: parseInt(apiStory.id),
+    title: apiStory.title,
+    slug: apiStory.title_slug,
+    summary: apiStory.summary,
+    published_date: apiStory.published_date,
+    updated_at: apiStory.published_date,
+    editorial_updated_at: apiStory.published_date,
+    clearance_mark: apiStory.story_mark_clearance,
+    lead_image: apiStory.image_url ? {
+      url: apiStory.image_url,
+      filename: apiStory.title
+    } : undefined,
+    regions: apiStory.categories ? JSON.parse(apiStory.categories) : [],
+    stated_location: apiStory.stated_location,
+    media_url: apiStory.media_url
+  };
+};
+
+export const fetchStoryById = async (id: string): Promise<{ story: NewsStory; similarStories: NewsStory[] }> => {
+  try {
+    const endpoints = [
+      `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://newswire-story-recommendation.staging.storyful.com/api/stories/${id}`)}&_t=${Date.now()}`,
+      `https://corsproxy.io/?${encodeURIComponent(`https://newswire-story-recommendation.staging.storyful.com/api/stories/${id}`)}&_t=${Date.now()}`
+    ];
+
+    for (const endpoint of endpoints) {
+      try {
+        const response = await fetch(endpoint);
+        if (!response.ok) continue;
+        
+        const data = await response.json();
+        console.log('Story Response:', data);
+
+        // Transform main story
+        const transformedStory = transformAPIStory(data.story);
+
+        // Transform similar stories
+        const transformedSimilarStories = data.similar_stories
+          ? data.similar_stories.map((story: APIStory) => transformAPIStory(story))
+          : [];
+
+        return {
+          story: transformedStory,
+          similarStories: transformedSimilarStories
+        };
+      } catch (error) {
+        console.error(`Error fetching from ${endpoint}:`, error);
+        continue;
       }
     }
-    
-    // Fallback to getting top stories
-    console.log('No similar stories found, using top stories instead');
-    const allStories = await getTopStories(forceRefresh);
-    
-    // Filter out the current story if needed
-    const filteredStories = storyId 
-      ? allStories.filter(story => story.id !== storyId)
-      : allStories;
-    
-    return filteredStories.slice(0, 5);
+    throw new Error('Failed to fetch story from any endpoint');
   } catch (error) {
-    console.error('Error getting recommended stories:', error);
-    // Return empty array instead of dummy data
-    return [];
+    console.error('Error in fetchStoryById:', error);
+    throw error;
   }
 };
