@@ -1,5 +1,6 @@
+
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Bot, MessageSquare, Code, ChevronRight, ChevronLeft, ChevronDown } from 'lucide-react';
+import { Bot, MessageSquare, Code, ChevronRight, ChevronLeft, ChevronDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -60,12 +61,6 @@ const AINewsModal: React.FC<AINewsModalProps> = ({ open, onClose, initialMessage
     onClose();
   };
 
-  const handleClearChat = () => {
-    if (window.confirm("Are you sure you want to clear the chat history? This cannot be undone.")) {
-      clearChatHistory();
-    }
-  };
-
   const MessageContent = ({ content, type }: { content: string; type: 'text' | 'code' | 'loading' }) => {
     if (type === 'loading') {
       return (
@@ -109,6 +104,7 @@ const AINewsModal: React.FC<AINewsModalProps> = ({ open, onClose, initialMessage
           transform: 'translate(0, 0)'
         }}
         onEscapeKeyDown={onClose}
+        closeButton={false}
       >
         <DialogTitle className="sr-only">Newswire AI Assistant</DialogTitle>
         <DialogDescription className="sr-only">
@@ -123,11 +119,11 @@ const AINewsModal: React.FC<AINewsModalProps> = ({ open, onClose, initialMessage
             <Button 
               variant="ghost" 
               size="icon" 
-              onClick={onClose} 
+              onClick={onClose}
               className="hover:bg-newswire-lightGray/50 transition-colors"
             >
-              <X size={18} />
               <span className="sr-only">Close</span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
             </Button>
           </div>
           
