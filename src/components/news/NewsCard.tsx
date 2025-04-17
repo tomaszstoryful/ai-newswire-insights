@@ -53,9 +53,11 @@ const NewsCard: React.FC<NewsCardProps> = ({ story, variant = 'default', size })
     }
   };
 
-  // IMPORTANT: Always use the numeric ID for the link
+  // CRITICAL: Always use the numeric ID for the link to ensure consistent navigation
   const storyId = story.id.toString();
   const storyLink = `/story/${storyId}`;
+
+  console.log(`NewsCard: Creating link for story ID ${storyId} with title "${story.title}"`);
 
   return (
     <Card className={`overflow-hidden transition-all hover:shadow-md ${isFeatured ? 'md:flex h-full' : ''}`}>

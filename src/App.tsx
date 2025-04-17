@@ -9,13 +9,16 @@ import StoryDetail from "./pages/StoryDetail";
 import NotFound from "./pages/NotFound";
 import AIAssistant from "./components/ai/AIAssistant";
 
-// Create a new query client with specific settings to prevent caching
+// Create a new query client with aggressive settings to prevent stale data
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       refetchOnWindowFocus: true,
       refetchOnMount: true,
-      staleTime: 10 * 1000, // Consider data stale after 10 seconds
+      staleTime: 5 * 1000, // Consider data stale after just 5 seconds
+      cacheTime: 10 * 60 * 1000, // Cache for 10 minutes
+      retry: 3, // Retry failed requests 3 times
+      retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
     },
   },
 });

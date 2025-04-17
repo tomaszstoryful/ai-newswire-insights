@@ -23,9 +23,9 @@ const Index = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const fetchVideos = async (showToast = false) => {
+  const fetchVideos = async (showToast = false, forceRefresh = false) => {
     try {
-      console.log('Starting to fetch videos...');
+      console.log(`Starting to fetch videos (forceRefresh: ${forceRefresh})...`);
       if (showToast) {
         setIsRefreshing(true);
         toast({
@@ -38,7 +38,8 @@ const Index = () => {
       
       setLoadError(null);
       
-      const allVideos = await getTopStories();
+      // Force refresh on manual refresh button click
+      const allVideos = await getTopStories(forceRefresh);
       console.log('Fetched videos:', allVideos.length);
       
       if (allVideos.length > 0) {
@@ -72,21 +73,23 @@ const Index = () => {
     }
   };
 
-  // Re-fetch data when navigating back to this page
+  // Use a more comprehensive approach to fetch fresh data
   useEffect(() => {
-    // Always fetch data when this component mounts
-    fetchVideos();
+    // On initial load, force refresh to avoid dummy data
+    fetchVideos(false, true);
     
-    // Attach an event listener for navigation events
+    // Handle navigation events
     const handleRouteChange = () => {
       if (location.pathname === '/') {
         console.log('Back on home page, refreshing data...');
-        fetchVideos();
+        fetchVideos(false, true);
       }
     };
     
+    // Listen for both popstate (back/forward) and navigation events
     window.addEventListener('popstate', handleRouteChange);
     
+    // Clean up when component unmounts
     return () => {
       window.removeEventListener('popstate', handleRouteChange);
     };
@@ -97,6 +100,11 @@ const Index = () => {
     video.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     video.summary.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // When user manually refreshes, force a refresh from API
+  const handleManualRefresh = () => {
+    fetchVideos(true, true);
+  };
 
   // Render skeleton loaders when loading
   const renderSkeletons = () => {
@@ -157,7 +165,7 @@ const Index = () => {
                 variant="outline" 
                 size="sm" 
                 className="text-xs flex items-center gap-1"
-                onClick={() => fetchVideos(true)}
+                onClick={handleManualRefresh}
                 disabled={isRefreshing}
               >
                 <RefreshCw size={14} className={isRefreshing ? "animate-spin" : ""} />
@@ -179,7 +187,7 @@ const Index = () => {
             <Button 
               variant="outline" 
               size="sm"
-              onClick={() => fetchVideos(true)}
+              onClick={handleManualRefresh}
               disabled={isRefreshing}
             >
               <RefreshCw size={14} className={`mr-2 ${isRefreshing ? "animate-spin" : ""}`} />
