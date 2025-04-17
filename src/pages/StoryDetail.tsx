@@ -19,7 +19,6 @@ const StoryDetail = () => {
   const [recommendedStories, setRecommendedStories] = useState<NewsStory[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Generate a random video duration for demo purposes
   const minutes = getRandomInt(2, 15);
   const seconds = getRandomInt(10, 59);
   const durationString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
@@ -173,7 +172,6 @@ const StoryDetail = () => {
                 </Button>
               </div>
               
-              {/* Video Preview */}
               {story?.lead_image && (
                 <div className="relative aspect-video w-full overflow-hidden mb-6 bg-newswire-lightGray rounded-lg shadow-md">
                   <img 
@@ -196,7 +194,6 @@ const StoryDetail = () => {
                 </div>
               )}
               
-              {/* Video Description */}
               <div className="prose max-w-none">
                 <h3 className="text-xl font-semibold mb-2">Video Description</h3>
                 {story?.summary.split('\n\n').map((paragraph, index) => (
@@ -206,7 +203,6 @@ const StoryDetail = () => {
                 ))}
               </div>
               
-              {/* Licensing Information */}
               <Card className="mt-8 mb-6">
                 <CardContent className="pt-6">
                   <h3 className="text-lg font-semibold mb-4">Licensing Information</h3>
@@ -285,20 +281,15 @@ const StoryDetail = () => {
               
               <Separator className="my-8" />
               
-              {/* AI Overview Section - now with isStoryDetail=true */}
               {story && <AIOverviewSection story={story} isStoryDetail={true} />}
             </div>
           </div>
           
           <div className="lg:col-span-4">
-            {/* Recommended Videos */}
             <RecommendedStories stories={recommendedStories} currentStoryId={story?.id} />
           </div>
         </div>
       </div>
-      
-      {/* AI Assistant with showAssistantButton set to false */}
-      <AIAssistant showAssistantButton={false} />
     </Layout>
   );
 };

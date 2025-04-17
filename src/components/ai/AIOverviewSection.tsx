@@ -63,14 +63,6 @@ const AIOverviewSection: React.FC<AIOverviewSectionProps> = ({ story, isStoryDet
     }
   };
 
-  const openAIAssistant = () => {
-    // @ts-ignore - Use the global function added to window object
-    if (window.openAIAssistant) {
-      // @ts-ignore
-      window.openAIAssistant();
-    }
-  };
-
   return (
     <>
       <Card className="border border-newswire-lightGray shadow-md mb-8">
@@ -82,14 +74,6 @@ const AIOverviewSection: React.FC<AIOverviewSectionProps> = ({ story, isStoryDet
                 {isStoryDetail ? "Story Intelligence" : "AI News Intelligence"}
               </h2>
             </div>
-            <Button 
-              onClick={openAIAssistant}
-              variant="outline" 
-              className="flex items-center gap-2 border-newswire-accent text-newswire-accent hover:bg-newswire-accent/10"
-            >
-              <MessageCircle size={16} />
-              <span className="hidden sm:inline">Open AI Assistant</span>
-            </Button>
           </div>
           
           {isStoryDetail ? (
@@ -195,15 +179,6 @@ const AIOverviewSection: React.FC<AIOverviewSectionProps> = ({ story, isStoryDet
                   ? "Ask about this story or explore licensing options" 
                   : "Ask about these insights or explore licensing options"}
               </h3>
-              <Button 
-                onClick={openAIAssistant}
-                variant="outline" 
-                size="sm"
-                className="ml-2 text-xs text-newswire-accent border-newswire-accent hover:bg-newswire-accent/10"
-              >
-                <MessageCircle size={14} className="mr-1" />
-                AI Chat
-              </Button>
             </div>
             
             <form onSubmit={handleSubmit} className="flex items-center gap-2">
