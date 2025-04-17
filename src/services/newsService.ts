@@ -162,8 +162,8 @@ const apiBasedMockStories = generateApiBasedStories();
 // Function to fetch stories from the provided API endpoint
 export const fetchStoriesFromAPI = async (): Promise<NewsStory[]> => {
   try {
-    // Use a CORS proxy for development to avoid CORS issues
-    const apiUrl = 'https://newswire-story-recommendation.staging.storyful.com/api/stories';
+    // Use the new API endpoint
+    const apiUrl = 'https://newswire.storyful.com/api/stories.json?page=1&exclude_from_home_page=true';
     const corsProxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(apiUrl);
     
     console.log('Fetching stories from API (with CORS proxy):', corsProxyUrl);
