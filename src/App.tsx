@@ -15,16 +15,13 @@ const queryClient = new QueryClient({
     queries: {
       refetchOnWindowFocus: true,
       refetchOnMount: true,
-      staleTime: 1000, // Consider data stale after just 1 second (reduced from 5)
+      staleTime: 5 * 1000, // Consider data stale after just 5 seconds
       gcTime: 10 * 60 * 1000, // Cache for 10 minutes (formerly cacheTime)
       retry: 3, // Retry failed requests 3 times
       retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
     },
   },
 });
-
-// Create a timestamp to force component remounts
-const timestamp = Date.now();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -33,8 +30,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          {/* Add key to force Index component to remount on every navigation */}
-          <Route path="/" element={<Index key={`index-${timestamp}`} />} />
+          <Route path="/" element={<Index />} />
           <Route path="/story/:slug" element={<StoryDetail />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

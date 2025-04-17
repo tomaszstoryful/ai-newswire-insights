@@ -23,7 +23,7 @@ const Index = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const fetchVideos = async (showToast = false, forceRefresh = true) => { // Always force refresh
+  const fetchVideos = async (showToast = false, forceRefresh = false) => {
     try {
       console.log(`Starting to fetch videos (forceRefresh: ${forceRefresh})...`);
       if (showToast) {
@@ -38,8 +38,8 @@ const Index = () => {
       
       setLoadError(null);
       
-      // Always force refresh - this is critical for avoiding stale data
-      const allVideos = await getTopStories(true);
+      // Force refresh on manual refresh button click
+      const allVideos = await getTopStories(forceRefresh);
       console.log('Fetched videos:', allVideos.length);
       
       if (allVideos.length > 0) {
@@ -75,26 +75,24 @@ const Index = () => {
 
   // Use a more comprehensive approach to fetch fresh data
   useEffect(() => {
-    console.log('Index component mounted or re-mounted - fetching fresh data');
-    
-    // Always force refresh on any mount or re-mount
+    // On initial load, force refresh to avoid dummy data
     fetchVideos(false, true);
     
-    // Add a cleanup function that runs on unmount
-    return () => {
-      console.log('Index component unmounting');
+    // Handle navigation events
+    const handleRouteChange = () => {
+      if (location.pathname === '/') {
+        console.log('Back on home page, refreshing data...');
+        fetchVideos(false, true);
+      }
     };
-  }, []); // We're using an empty dependency array but with key in App.tsx to force remount
-  
-  // Add a second effect specifically to handle route changes
-  useEffect(() => {
-    // This effect will run on any location change
-    console.log('Location changed to:', location.pathname);
     
-    if (location.pathname === '/') {
-      console.log('Back on home page, refreshing data...');
-      fetchVideos(false, true);
-    }
+    // Listen for both popstate (back/forward) and navigation events
+    window.addEventListener('popstate', handleRouteChange);
+    
+    // Clean up when component unmounts
+    return () => {
+      window.removeEventListener('popstate', handleRouteChange);
+    };
   }, [location.pathname]);
 
   // Filter videos based on search term
