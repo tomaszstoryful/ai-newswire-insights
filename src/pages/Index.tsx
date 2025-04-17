@@ -16,19 +16,28 @@ const Index = () => {
   const [videos, setVideos] = useState<NewsStory[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchVideos = async () => {
       try {
+        console.log('Starting to fetch videos...');
         setLoading(true);
+        setLoadError(null);
+        
         const allVideos = await getTopStories();
+        console.log('Fetched videos:', allVideos.length);
         
         if (allVideos.length > 0) {
           setFeaturedVideo(allVideos[0]);
           setVideos(allVideos.slice(1));
+        } else {
+          console.log('No videos returned from API');
+          setLoadError('No videos available at this time.');
         }
       } catch (error) {
-        console.error('Error fetching videos:', error);
+        console.error('Error in component when fetching videos:', error);
+        setLoadError('Failed to load videos. Please try again later.');
       } finally {
         setLoading(false);
       }
@@ -104,7 +113,14 @@ const Index = () => {
           </div>
         </div>
         
-        {filteredVideos.length === 0 ? (
+        {loadError && (
+          <div className="text-center py-12 bg-red-50 rounded-lg">
+            <h3 className="text-xl font-medium text-red-700 mb-2">{loadError}</h3>
+            <p className="text-newswire-mediumGray">Try refreshing the page or check back later</p>
+          </div>
+        )}
+        
+        {!loadError && filteredVideos.length === 0 ? (
           <div className="text-center py-12">
             <h3 className="text-xl font-medium text-newswire-darkGray mb-2">No videos found</h3>
             <p className="text-newswire-mediumGray">Try adjusting your search criteria</p>

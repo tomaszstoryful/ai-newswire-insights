@@ -70,13 +70,26 @@ const mockStories = generateMockStories();
 // Function to fetch stories from the provided API endpoint
 export const fetchStoriesFromAPI = async (): Promise<NewsStory[]> => {
   try {
-    const response = await fetch('https://newswire-story-recommendation.staging.storyful.com/api/stories');
+    // Use CORS proxy for development to avoid CORS issues
+    const apiUrl = 'https://newswire-story-recommendation.staging.storyful.com/api/stories';
+    console.log('Fetching stories from API:', apiUrl);
+    
+    const response = await fetch(apiUrl, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      mode: 'cors'
+    });
     
     if (!response.ok) {
+      console.error(`API responded with status: ${response.status}`);
       throw new Error(`API responded with status: ${response.status}`);
     }
     
     const apiStories = await response.json();
+    console.log('Successfully fetched stories:', apiStories.length);
     
     // Transform API response to match our NewsStory type
     return apiStories.map((story: any) => {
@@ -118,13 +131,17 @@ export const fetchStoriesFromAPI = async (): Promise<NewsStory[]> => {
   } catch (error) {
     console.error('Error fetching stories from API:', error);
     // Fallback to mock data in case of API failure
+    console.log('Falling back to mock data');
     return mockStories;
   }
 };
 
 export const getTopStories = async (): Promise<NewsStory[]> => {
+  console.log('Getting top stories...');
   try {
-    return await fetchStoriesFromAPI();
+    const apiStories = await fetchStoriesFromAPI();
+    console.log(`Retrieved ${apiStories.length} stories`);
+    return apiStories;
   } catch (error) {
     console.error('Error getting top stories:', error);
     return mockStories;
