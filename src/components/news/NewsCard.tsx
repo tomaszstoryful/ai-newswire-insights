@@ -54,20 +54,14 @@ const NewsCard: React.FC<NewsCardProps> = ({ story, variant = 'default', size })
   };
 
   // CRITICAL: Always use the numeric ID for the link to ensure consistent navigation
-  const storyId = story.id.toString();
-  const storyLink = `/story/${storyId}`;
-
-  console.log(`NewsCard: Creating link for story ID ${storyId} with title "${story.title}"`);
-
-  // Check for missing image and provide empty string instead of placeholder
-  const hasImage = story.lead_image?.url && story.lead_image.url.trim() !== '';
+  const storyLink = `/story/${story.id}`;
 
   return (
     <Card className={`overflow-hidden transition-all hover:shadow-md ${isFeatured ? 'md:flex h-full' : ''}`}>
       <Link to={storyLink} className="block h-full">
         <div className={`${isFeatured ? 'md:w-1/2 md:flex-shrink-0' : ''}`}>
           <div className="relative aspect-video bg-newswire-lightGray">
-            {hasImage ? (
+            {story.lead_image?.url ? (
               <img 
                 src={story.lead_image.url} 
                 alt={story.title} 

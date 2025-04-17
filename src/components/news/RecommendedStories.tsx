@@ -33,7 +33,7 @@ const RecommendedStories: React.FC<RecommendedStoriesProps> = ({ stories, curren
             const seconds = getRandomInt(10, 59);
             const durationString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
             
-            // CRITICAL: Use numeric ID for consistent navigation
+            // CRITICAL: Always use the numeric ID for consistent navigation
             const storyLink = `/story/${story.id}`;
             
             return (

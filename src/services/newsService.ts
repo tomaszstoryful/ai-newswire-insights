@@ -71,36 +71,49 @@ const transformAPIStory = (apiStory: APIStory): NewsStory => {
     regions: apiStory.categories ? JSON.parse(apiStory.categories) : [],
     stated_location: apiStory.stated_location,
     media_url: apiStory.media_url,
-    in_trending_collection: false, // Add the missing property
+    in_trending_collection: false,
     video_providing_partner: false,
     collection_headline: '',
-    collection_summary_html: ''
+    collection_summary_html: '',
+    lead_item: {
+      resource_type: 'video'
+    }
   };
 };
 
 export const fetchStoryById = async (id: string): Promise<{ story: NewsStory; similarStories: NewsStory[] }> => {
   try {
+    console.log(`Fetching story with ID: ${id}`);
+    // Try multiple CORS proxies in case one fails
     const endpoints = [
-      `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://newswire-story-recommendation.staging.storyful.com/api/stories/${id}`)}&_t=${Date.now()}`,
-      `https://corsproxy.io/?${encodeURIComponent(`https://newswire-story-recommendation.staging.storyful.com/api/stories/${id}`)}&_t=${Date.now()}`
+      `${API_BASE_URL}${encodeURIComponent(`${API_ENDPOINT}/${id}`)}&_t=${Date.now()}`,
+      `https://corsproxy.io/?${encodeURIComponent(`${API_ENDPOINT}/${id}`)}&_t=${Date.now()}`
     ];
 
     for (const endpoint of endpoints) {
       try {
+        console.log(`Trying endpoint: ${endpoint}`);
         const response = await fetch(endpoint);
-        if (!response.ok) continue;
+        if (!response.ok) {
+          console.warn(`Failed to fetch from ${endpoint}, status: ${response.status}`);
+          continue;
+        }
         
         const data = await response.json();
         console.log('Story Response:', data);
 
         // Transform main story
-        const transformedStory = transformAPIStory(data.story);
+        const transformedStory = data.story 
+          ? transformAPIStory(data.story) 
+          : transformAPIStory(data);
 
         // Transform similar stories
         const transformedSimilarStories = data.similar_stories
           ? data.similar_stories.map((story: APIStory) => transformAPIStory(story))
           : [];
 
+        console.log(`Successfully fetched story ID ${id} with ${transformedSimilarStories.length} similar stories`);
+        
         return {
           story: transformedStory,
           similarStories: transformedSimilarStories
@@ -117,7 +130,6 @@ export const fetchStoryById = async (id: string): Promise<{ story: NewsStory; si
   }
 };
 
-// Add the missing getTopStories function
 export const getTopStories = async (forceRefresh: boolean = false): Promise<NewsStory[]> => {
   try {
     // Check if we have a valid cache

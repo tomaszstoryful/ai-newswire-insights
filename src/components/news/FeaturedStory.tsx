@@ -49,9 +49,12 @@ const FeaturedStory: React.FC<FeaturedStoryProps> = ({ story }) => {
     }
   };
 
+  // Always use numeric ID for links
+  const storyLink = `/story/${story.id}`;
+
   return (
     <div className="border-b border-newswire-lightGray pb-8 mb-10">
-      <Link to={`/story/${story.slug}`} className="group">
+      <Link to={storyLink} className="group">
         <div className="grid md:grid-cols-2 gap-8">
           <div className="order-2 md:order-1">
             <div className="mb-3 flex items-center gap-2">
