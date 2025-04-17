@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { AIMessage, NewsStory } from '@/types/news';
 import { simulatePythonExecution, simulateNewsSearch } from '@/services/aiService';
-import { getTrendingStories } from '@/services/newsService';
+import { getTopStories } from '@/services/newsService';
 
 interface NewsResult extends NewsStory {
   messageId: string; // Changed from messageIndex to messageId for direct linking

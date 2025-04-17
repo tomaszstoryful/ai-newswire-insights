@@ -16,7 +16,7 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: true,
       refetchOnMount: true,
       staleTime: 5 * 1000, // Consider data stale after just 5 seconds
-      cacheTime: 10 * 60 * 1000, // Cache for 10 minutes
+      gcTime: 10 * 60 * 1000, // Cache for 10 minutes (formerly cacheTime)
       retry: 3, // Retry failed requests 3 times
       retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
     },
