@@ -11,6 +11,8 @@ export const useNewsData = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const maxRetries = 3;
 
   const fetchVideos = async (showToast = false, forceRefresh = false) => {
     try {
@@ -37,6 +39,9 @@ export const useNewsData = () => {
         // Set the rest of the videos
         setVideos(allVideos.slice(1));
         
+        // Reset retry count on success
+        setRetryCount(0);
+        
         if (showToast) {
           toast({
             title: "Stories refreshed",
@@ -60,15 +65,27 @@ export const useNewsData = () => {
     } catch (error) {
       console.error('Error in component when fetching videos:', error);
       setLoadError('Failed to load videos. Please try again later.');
-      setFeaturedVideo(null);
-      setVideos([]);
       
-      if (showToast) {
-        toast({
-          title: "Error refreshing stories",
-          description: "There was a problem fetching the latest stories.",
-          variant: "destructive",
-        });
+      // Only auto-retry if we haven't reached max retries
+      if (retryCount < maxRetries && !showToast) {
+        setRetryCount(prev => prev + 1);
+        console.log(`Auto-retrying fetch (${retryCount + 1}/${maxRetries})...`);
+        
+        // Wait 2 seconds before retrying
+        setTimeout(() => {
+          fetchVideos(false, true);
+        }, 2000);
+      } else {
+        setFeaturedVideo(null);
+        setVideos([]);
+        
+        if (showToast) {
+          toast({
+            title: "Error refreshing stories",
+            description: "There was a problem fetching the latest stories.",
+            variant: "destructive",
+          });
+        }
       }
     } finally {
       setLoading(false);
@@ -85,7 +102,7 @@ export const useNewsData = () => {
   // Initial load handler
   useEffect(() => {
     console.log('Index component mounted or route changed');
-    // On initial load, force refresh to avoid dummy data
+    // On initial load, force refresh to get fresh data
     fetchVideos(false, true);
     
     // Clean up function

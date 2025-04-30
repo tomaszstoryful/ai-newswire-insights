@@ -3,29 +3,35 @@ import { APIStory, NewsStory } from '@/types/news';
 
 // Transform API response to our app model
 export const transformAPIStory = (apiStory: APIStory): NewsStory => {
-  // Ensure we're getting the right data structure and logging it for debugging
-  console.log('Transforming API story:', apiStory);
+  console.log('Transforming Storyful API story:', apiStory);
+  
+  // Helper function to safely parse JSON strings
+  const safeJsonParse = (jsonString: string | null | undefined, fallback: any = []) => {
+    if (!jsonString) return fallback;
+    try {
+      return JSON.parse(jsonString);
+    } catch (e) {
+      console.error('Failed to parse JSON string:', jsonString);
+      return fallback;
+    }
+  };
   
   return {
     id: parseInt(apiStory.id),
-    title: apiStory.title,
-    slug: apiStory.title_slug,
+    title: apiStory.title || 'Untitled',
+    slug: apiStory.title_slug || `story-${apiStory.id}`,
     summary: apiStory.summary || apiStory.extended_summary || "No summary available",
-    published_date: apiStory.published_date,
-    updated_at: apiStory.published_date,
-    editorial_updated_at: apiStory.published_date,
-    clearance_mark: apiStory.story_mark_clearance,
+    published_date: apiStory.published_date || new Date().toISOString(),
+    updated_at: apiStory.published_date || new Date().toISOString(),
+    editorial_updated_at: apiStory.published_date || new Date().toISOString(),
+    clearance_mark: apiStory.story_mark_clearance || "LICENSED",
     lead_image: apiStory.image_url ? {
       url: apiStory.image_url,
-      filename: apiStory.title
+      filename: apiStory.title || `image-${apiStory.id}`
     } : undefined,
-    regions: apiStory.categories ? (
-      typeof apiStory.categories === 'string' ? 
-        JSON.parse(apiStory.categories) : 
-        apiStory.categories
-    ) : [],
-    stated_location: apiStory.stated_location,
-    media_url: apiStory.media_url,
+    regions: apiStory.categories ? safeJsonParse(apiStory.categories) : [],
+    stated_location: apiStory.stated_location || "Unknown",
+    media_url: apiStory.media_url || "",
     in_trending_collection: false,
     video_providing_partner: false,
     collection_headline: '',
@@ -43,7 +49,7 @@ export const transformAPIStory = (apiStory: APIStory): NewsStory => {
   };
 };
 
-// New function to transform NewsAPI stories to our app model
+// Transform NewsAPI stories to our app model
 export const transformNewsAPIStory = (article: any, id: number): NewsStory => {
   console.log('Transforming NewsAPI article:', article);
   
