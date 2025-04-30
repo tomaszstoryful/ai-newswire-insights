@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { NewsStory } from '@/types/news';
 import { formatDate, getRandomInt } from '@/lib/utils';
+import { toast } from '@/components/ui/use-toast';
 
 interface NewsCardProps {
   story: NewsStory;

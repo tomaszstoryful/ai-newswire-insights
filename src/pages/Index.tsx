@@ -12,6 +12,7 @@ import AIAssistant from '@/components/ai/AIAssistant';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/use-toast';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 const Index = () => {
   const [featuredVideo, setFeaturedVideo] = useState<NewsStory | null>(null);
@@ -154,6 +155,25 @@ const Index = () => {
   return (
     <Layout>
       <div className="container mx-auto px-4 md:px-6 py-8">
+        {/* Connection Error Alert */}
+        <Alert variant="destructive" className="mb-6">
+          <AlertTitle>Connection Status</AlertTitle>
+          <AlertDescription className="flex justify-between items-center">
+            <span>
+              Testing direct connection to the API endpoint. If you see sample data, please try refreshing.
+            </span>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleManualRefresh}
+              disabled={isRefreshing}
+            >
+              <RefreshCw size={14} className={`mr-2 ${isRefreshing ? "animate-spin" : ""}`} />
+              {isRefreshing ? "Refreshing..." : "Refresh Now"}
+            </Button>
+          </AlertDescription>
+        </Alert>
+        
         {/* AI Insights Section - Only show if featured video exists */}
         {featuredVideo && <AIOverviewSection story={featuredVideo} />}
         

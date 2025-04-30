@@ -2,7 +2,7 @@
 import { APIStory, APIStoryResponse, NewsStory } from '@/types/news';
 import { toast } from '@/components/ui/use-toast';
 
-const API_BASE_URL = 'https://corsproxy.io/?';
+const API_BASE_URL = ''; // Empty base URL to use direct requests
 const API_ENDPOINT = 'https://newswire-story-recommendation.staging.storyful.com/api/stories';
 const STORIES_CACHE_KEY = 'newswire_stories_cache';
 const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes
@@ -34,12 +34,16 @@ const addCacheBuster = (url: string): string => {
 const fetchWithoutProxy = async <T>(url: string): Promise<T | null> => {
   try {
     console.log(`Attempting direct fetch to: ${url}`);
+    // Using no-cors mode to see if we can at least connect
     const response = await fetch(url, {
       method: 'GET',
       headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
         'Cache-Control': 'no-cache, no-store, must-revalidate'
       },
-      mode: 'cors'
+      mode: 'cors', // Try standard CORS first
+      credentials: 'omit' // Don't send cookies
     });
     await handleErrors(response);
     const data = await response.json();
@@ -55,6 +59,8 @@ const fetchWithoutProxy = async <T>(url: string): Promise<T | null> => {
 const fetchData = async <T>(endpoint: string, params?: string): Promise<T> => {
   const targetUrl = params ? `${endpoint}${params}` : endpoint;
   const errors: Error[] = [];
+  
+  console.log('Starting fetchData with URL:', targetUrl);
   
   // Try direct fetch first if it's a GET request and simple URL
   try {
@@ -79,8 +85,11 @@ const fetchData = async <T>(endpoint: string, params?: string): Promise<T> => {
       const response = await fetch(url, {
         method: 'GET',
         headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
           'Cache-Control': 'no-cache, no-store, must-revalidate'
-        }
+        },
+        credentials: 'omit' // Don't send cookies
       });
       await handleErrors(response);
       const data = await response.json();
