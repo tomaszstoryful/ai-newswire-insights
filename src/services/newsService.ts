@@ -1,9 +1,8 @@
-
 import { APIStory, APIStoryResponse, NewsStory } from '@/types/news';
 import { toast } from '@/components/ui/use-toast';
 import { fetchData } from '@/utils/apiUtils';
 import { getMockData, getMockStoryResult } from '@/utils/mockDataUtils';
-import { transformAPIStory, transformNewsAPIStory } from '@/utils/transformUtils';
+import { transformAPIStory, transformNewsAPIStory, parseRawApiData } from '@/utils/transformUtils';
 import { getValidCache, saveToCache } from '@/utils/cacheUtils';
 
 // Primary API endpoint - using Storyful API
@@ -20,9 +19,10 @@ export const fetchStoryById = async (id: string): Promise<{ story: NewsStory; si
     try {
       // Try using the Storyful API directly to get a story
       console.log(`Attempting to fetch single story from Storyful API`);
-      const allStories = await fetchData<APIStory[]>(STORYFUL_API);
+      const rawData = await fetchData<any>(STORYFUL_API);
+      const allStories = parseRawApiData(rawData);
       
-      if (allStories && Array.isArray(allStories) && allStories.length > 0) {
+      if (allStories && allStories.length > 0) {
         // Find a story that matches the ID or use the first one as fallback
         const story = allStories.find(s => s.id === id) || allStories[0];
         
@@ -94,9 +94,10 @@ export const getTopStories = async (forceRefresh: boolean = false): Promise<News
     try {
       // Try using the Storyful API first
       console.log(`Fetching from: ${STORYFUL_API}`);
-      const storyfulData = await fetchData<APIStory[]>(STORYFUL_API);
+      const rawData = await fetchData<any>(STORYFUL_API);
+      const storyfulData = parseRawApiData(rawData);
       
-      if (storyfulData && Array.isArray(storyfulData) && storyfulData.length > 0) {
+      if (storyfulData && storyfulData.length > 0) {
         console.log('Storyful API returned stories:', storyfulData.length);
         
         // Transform the storyful data to our NewsStory format
@@ -122,7 +123,7 @@ export const getTopStories = async (forceRefresh: boolean = false): Promise<News
       
       // Try NewsAPI as fallback
       console.log(`Fetching from fallback: ${FALLBACK_API}/top-headlines`);
-      const newsApiData = await fetchData<any>(`${FALLBACK_API}/top-headlines`, `?country=us&apiKey=${FALLBACK_API_KEY}`);
+      const newsApiData = await fetchData<any>(`${FALLBACK_API}/top-headlines?country=us&apiKey=${FALLBACK_API_KEY}`);
       
       if (newsApiData && newsApiData.articles && Array.isArray(newsApiData.articles)) {
         console.log('NewsAPI returned stories:', newsApiData.articles.length);

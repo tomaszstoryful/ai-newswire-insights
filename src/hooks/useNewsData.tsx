@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { NewsStory } from '@/types/news';
 import { getTopStories } from '@/services/newsService';
 import { toast } from '@/components/ui/use-toast';
@@ -13,8 +13,9 @@ export const useNewsData = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const maxRetries = 3;
-
-  const fetchVideos = async (showToast = false, forceRefresh = false) => {
+  
+  // Memoized fetch function to avoid recreating it on each render
+  const fetchVideos = useCallback(async (showToast = false, forceRefresh = false) => {
     try {
       console.log(`Starting to fetch videos (forceRefresh: ${forceRefresh})...`);
       if (showToast) {
@@ -51,8 +52,12 @@ export const useNewsData = () => {
       } else {
         console.log('No videos returned from API');
         setLoadError('No videos available at this time. Please try again later.');
-        setFeaturedVideo(null);
-        setVideos([]);
+        
+        // Don't clear existing videos on refresh if we get an empty result
+        if (!showToast && !forceRefresh && videos.length === 0) {
+          setFeaturedVideo(null);
+          setVideos([]);
+        }
         
         if (showToast) {
           toast({
@@ -64,34 +69,37 @@ export const useNewsData = () => {
       }
     } catch (error) {
       console.error('Error in component when fetching videos:', error);
-      setLoadError('Failed to load videos. Please try again later.');
       
-      // Only auto-retry if we haven't reached max retries
+      // Don't clear videos if we already have them
+      if (videos.length === 0) {
+        setLoadError('Failed to load videos. Please try again later.');
+      }
+      
+      // Only auto-retry if we haven't reached max retries and it's not a manual refresh
       if (retryCount < maxRetries && !showToast) {
         setRetryCount(prev => prev + 1);
         console.log(`Auto-retrying fetch (${retryCount + 1}/${maxRetries})...`);
         
-        // Wait 2 seconds before retrying
+        // Wait longer between retries (exponential backoff)
+        const retryDelay = Math.min(2000 * Math.pow(1.5, retryCount), 10000);
+        console.log(`Retrying in ${retryDelay}ms`);
+        
         setTimeout(() => {
           fetchVideos(false, true);
-        }, 2000);
-      } else {
-        setFeaturedVideo(null);
-        setVideos([]);
-        
-        if (showToast) {
-          toast({
-            title: "Error refreshing stories",
-            description: "There was a problem fetching the latest stories.",
-            variant: "destructive",
-          });
-        }
+        }, retryDelay);
+      } else if (showToast) {
+        // Only show toast for manual refresh failures
+        toast({
+          title: "Error refreshing stories",
+          description: "There was a problem fetching the latest stories.",
+          variant: "destructive",
+        });
       }
     } finally {
       setLoading(false);
       setIsRefreshing(false);
     }
-  };
+  }, [retryCount, maxRetries, videos.length]);
 
   // Filter videos based on search term
   const filteredVideos = videos.filter(video => 
@@ -109,7 +117,7 @@ export const useNewsData = () => {
     return () => {
       console.log('Index component unmounting');
     };
-  }, []);
+  }, [fetchVideos]);
 
   return {
     featuredVideo,

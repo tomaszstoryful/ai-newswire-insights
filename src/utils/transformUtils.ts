@@ -16,14 +16,27 @@ export const transformAPIStory = (apiStory: APIStory): NewsStory => {
     }
   };
   
+  // Ensure we have a valid ID
+  const id = apiStory.id ? parseInt(apiStory.id) : Math.floor(Math.random() * 900000) + 100000;
+  
+  // Create a cleaner slug from title or ID
+  const slug = apiStory.title_slug || 
+               (apiStory.title ? apiStory.title.toLowerCase().replace(/[^\w\s]/gi, '').replace(/\s+/g, '-') : `story-${id}`);
+  
+  // Use the first available description text
+  const summary = apiStory.summary || apiStory.extended_summary || "No summary available";
+  
+  // Make sure we have a valid date
+  const pubDate = apiStory.published_date || new Date().toISOString();
+  
   return {
-    id: parseInt(apiStory.id),
+    id: id,
     title: apiStory.title || 'Untitled',
-    slug: apiStory.title_slug || `story-${apiStory.id}`,
-    summary: apiStory.summary || apiStory.extended_summary || "No summary available",
-    published_date: apiStory.published_date || new Date().toISOString(),
-    updated_at: apiStory.published_date || new Date().toISOString(),
-    editorial_updated_at: apiStory.published_date || new Date().toISOString(),
+    slug: slug,
+    summary: summary,
+    published_date: pubDate,
+    updated_at: pubDate,
+    editorial_updated_at: pubDate,
     clearance_mark: apiStory.story_mark_clearance || "LICENSED",
     lead_image: apiStory.image_url ? {
       url: apiStory.image_url,
@@ -37,7 +50,7 @@ export const transformAPIStory = (apiStory: APIStory): NewsStory => {
     collection_headline: '',
     collection_summary_html: '',
     lead_item: {
-      id: parseInt(apiStory.id),
+      id: id,
       resource_type: 'video',
       type: 'video',
       media_button: {
@@ -84,4 +97,48 @@ export const transformNewsAPIStory = (article: any, id: number): NewsStory => {
       }
     }
   };
+};
+
+// Helper function to parse raw API data - this handles malformed or unusual formats
+export const parseRawApiData = (data: any): APIStory[] => {
+  // If data is already an array, use it directly
+  if (Array.isArray(data)) {
+    console.log(`API returned an array with ${data.length} items`);
+    return data;
+  }
+  
+  // If data is an object with specific properties, extract stories array
+  if (data && typeof data === 'object') {
+    // Check common API response structures
+    if (data.stories && Array.isArray(data.stories)) {
+      console.log(`API returned object with stories array (${data.stories.length} items)`);
+      return data.stories;
+    }
+    
+    if (data.data && Array.isArray(data.data)) {
+      console.log(`API returned object with data array (${data.data.length} items)`);
+      return data.data;
+    }
+    
+    if (data.results && Array.isArray(data.results)) {
+      console.log(`API returned object with results array (${data.results.length} items)`);
+      return data.results;
+    }
+    
+    // If it's a simple object, wrap it in an array
+    if (data.id || data.title) {
+      console.log('API returned a single story object');
+      return [data];
+    }
+    
+    // If we have keys that look like indices, try to convert to array
+    if (Object.keys(data).every(key => !isNaN(Number(key)))) {
+      console.log('API returned object with numeric keys, converting to array');
+      return Object.values(data);
+    }
+  }
+  
+  // If we couldn't parse it as expected
+  console.error('Unexpected API data format:', data);
+  return [];
 };

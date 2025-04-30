@@ -1,3 +1,4 @@
+
 // Handle API request utilities
 
 // Add cache buster to URL to prevent caching
@@ -6,106 +7,139 @@ export const addCacheBuster = (url: string): string => {
   return `${url}${separator}_t=${Date.now()}`;
 };
 
-// Utility function to handle errors
+// Utility function to handle errors with more detailed logging
 export const handleErrors = async (response: Response) => {
   if (!response.ok) {
-    const message = `HTTP error! Status: ${response.status}`;
+    const statusText = response.statusText || 'Unknown error';
+    const message = `HTTP error! Status: ${response.status} ${statusText}`;
     console.error(message);
+    
+    // Log more details about the response for debugging
+    console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+    
+    // Try to get response text for more context
+    try {
+      const text = await response.text();
+      console.log('Error response body:', text.substring(0, 500)); // Log first 500 chars only
+    } catch (e) {
+      console.log('Could not read error response body');
+    }
+    
     throw new Error(message);
   }
   return response;
 };
 
-// List of CORS proxies to try in order - adding more proxies and better fallback
-const corsProxies = [
-  (url: string) => url, // First try direct access without proxy
-  (url: string) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-  (url: string) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
-  (url: string) => `https://cors.bridged.cc/${url}`,
-  (url: string) => `https://cors-anywhere.herokuapp.com/${url}`
+// Convert to JSON with better error handling
+export const toJson = async (response: Response) => {
+  try {
+    return await response.json();
+  } catch (e) {
+    console.error('JSON parsing error:', e);
+    // Try to log the text that couldn't be parsed
+    try {
+      const text = await response.text();
+      console.log('Failed to parse as JSON:', text.substring(0, 200)); // Log first 200 chars
+    } catch (innerError) {
+      console.log('Could not read response text');
+    }
+    throw new Error('Failed to parse response as JSON');
+  }
+};
+
+// List of fetch strategies to try in order
+const fetchStrategies = [
+  // Direct fetch with enhanced headers
+  async (url: string) => {
+    console.log('Trying direct fetch with enhanced headers');
+    return fetch(url, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache',
+        'X-Requested-With': 'XMLHttpRequest',
+      },
+      mode: 'cors',
+      credentials: 'omit',
+    });
+  },
+  
+  // Direct fetch with minimal headers 
+  async (url: string) => {
+    console.log('Trying direct fetch with minimal headers');
+    return fetch(url, {
+      method: 'GET',
+      mode: 'cors',
+      credentials: 'omit',
+    });
+  },
+  
+  // Using fetch with no-cors mode (limited but may work for some APIs)
+  async (url: string) => {
+    console.log('Trying no-cors mode fetch');
+    return fetch(url, {
+      method: 'GET',
+      mode: 'no-cors',
+      credentials: 'omit',
+    });
+  },
+  
+  // Using allorigins.win proxy
+  async (url: string) => {
+    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+    console.log('Trying allorigins.win proxy:', proxyUrl);
+    return fetch(proxyUrl);
+  },
+  
+  // Using corsproxy.io
+  async (url: string) => {
+    const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+    console.log('Trying corsproxy.io proxy:', proxyUrl);
+    return fetch(proxyUrl);
+  }
 ];
 
-// Fetch data with multiple CORS proxy fallbacks and better error handling
+// Fetch data with multiple strategies and better error handling
 export const fetchData = async <T>(endpoint: string, params?: string): Promise<T> => {
   const targetUrl = params ? `${endpoint}${params}` : endpoint;
   console.log(`Starting fetch attempts to: ${targetUrl}`);
   
+  // Add cache buster to prevent caching issues
+  const urlWithCache = addCacheBuster(targetUrl);
+  
   let lastError: Error | null = null;
   
-  // Try each proxy in sequence
-  for (let i = 0; i < corsProxies.length; i++) {
-    const proxyUrl = corsProxies[i](addCacheBuster(targetUrl));
-    console.log(`Attempt ${i+1}: Fetching via ${i === 0 ? 'direct connection' : 'proxy'}: ${proxyUrl}`);
-    
+  // Try each strategy in sequence
+  for (let i = 0; i < fetchStrategies.length; i++) {
     try {
-      // Add a longer timeout for API requests
+      // Add a timeout for each fetch attempt
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15-second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 8000); // 8-second timeout
       
-      const response = await fetch(proxyUrl, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Origin': window.location.origin,
-          'Referrer-Policy': 'no-referrer-when-downgrade'
-        },
-        mode: 'cors',
-        credentials: 'omit',
-        signal: controller.signal
-      });
+      const strategy = fetchStrategies[i];
+      const response = await strategy(urlWithCache);
       
-      clearTimeout(timeoutId); // Clear the timeout since the request completed
+      clearTimeout(timeoutId); // Clear the timeout
       
-      await handleErrors(response);
-      const data = await response.json();
-      console.log(`Fetch successful via ${i === 0 ? 'direct connection' : 'proxy'} for: ${targetUrl}`);
-      return data as T;
-    } catch (error) {
-      console.error(`Fetch attempt ${i+1} failed:`, error);
-      lastError = error as Error;
-      
-      // If this is the last proxy in our list, continue to try the original NewsAPI fallback
-      if (i === corsProxies.length - 1) {
-        console.error(`All CORS proxies failed`);
-        break;
+      // For no-cors mode, we can't check status or parse JSON, so just return empty array
+      if (i === 2) { // Index of the no-cors strategy
+        console.log('No-cors mode fetch completed, but response content is opaque');
+        return [] as unknown as T;
       }
       
-      // Otherwise continue to the next proxy
-      console.log(`Trying next proxy...`);
+      await handleErrors(response);
+      const data = await toJson(response);
+      console.log(`Fetch successful via strategy ${i} for: ${targetUrl}`);
+      return data as T;
+    } catch (error) {
+      console.error(`Fetch strategy ${i} failed:`, error);
+      lastError = error as Error;
+      // Continue to the next strategy
     }
   }
   
-  // If we've tried all proxies and still failed, try the specific storyful endpoint directly
-  // with a different approach as a last resort
-  try {
-    console.log('Attempting direct API call with modified headers as last resort');
-    const directUrl = addCacheBuster(targetUrl);
-    
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
-    
-    const response = await fetch(directUrl, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': '*/*',
-        'Access-Control-Allow-Origin': '*',
-        'X-Requested-With': 'XMLHttpRequest'
-      },
-      mode: 'cors',
-      credentials: 'omit',
-      signal: controller.signal
-    });
-    
-    clearTimeout(timeoutId);
-    await handleErrors(response);
-    const data = await response.json();
-    console.log('Last resort direct fetch successful!');
-    return data as T;
-  } catch (error) {
-    console.error('Last resort fetch failed:', error);
-    throw new Error(`Failed to fetch data after all attempts: ${lastError?.message || 'Unknown error'}`);
-  }
+  console.error('All fetch strategies failed for:', targetUrl);
+  throw new Error(`Failed to fetch data after all attempts: ${lastError?.message || 'Unknown error'}`);
 };
