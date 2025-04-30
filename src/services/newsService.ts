@@ -148,6 +148,9 @@ const getMockStoryResult = (storyId: string | number) => {
 
 // Transform API response to our app model
 const transformAPIStory = (apiStory: APIStory): NewsStory => {
+  // Ensure we're getting the right data structure and logging it for debugging
+  console.log('Transforming API story:', apiStory);
+  
   return {
     id: parseInt(apiStory.id),
     title: apiStory.title,
@@ -161,7 +164,11 @@ const transformAPIStory = (apiStory: APIStory): NewsStory => {
       url: apiStory.image_url,
       filename: apiStory.title
     } : undefined,
-    regions: apiStory.categories ? JSON.parse(apiStory.categories) : [],
+    regions: apiStory.categories ? (
+      typeof apiStory.categories === 'string' ? 
+        JSON.parse(apiStory.categories) : 
+        apiStory.categories
+    ) : [],
     stated_location: apiStory.stated_location,
     media_url: apiStory.media_url,
     in_trending_collection: false,
@@ -187,6 +194,7 @@ export const fetchStoryById = async (id: string): Promise<{ story: NewsStory; si
     
     try {
       const data = await fetchData<APIStoryResponse>(`${API_ENDPOINT}/${id}`);
+      console.log('Story API response:', data);
       
       // If the response has a story property, use that structure
       if (data.story) {
@@ -259,8 +267,9 @@ export const getTopStories = async (forceRefresh: boolean = false): Promise<News
     console.log('Fetching fresh stories from API...');
     
     try {
-      // Use a direct query parameter without a function call
-      const data = await fetchData<APIStory[]>(`${API_ENDPOINT}`, '?limit=20');
+      // Use the direct endpoint with a limit parameter to get multiple stories
+      console.log(`Fetching from: ${API_ENDPOINT}?limit=20`);
+      const data = await fetchData<APIStory[]>(API_ENDPOINT, '?limit=20');
       
       if (!Array.isArray(data)) {
         console.error('Unexpected API response format (not an array):', data);
@@ -273,7 +282,8 @@ export const getTopStories = async (forceRefresh: boolean = false): Promise<News
         console.log('API returned stories:', data.length);
       }
       
-      const stories = data.map(transformAPIStory);
+      const stories = data.map(story => transformAPIStory(story));
+      console.log('Transformed stories:', stories.length);
       
       // Cache the result
       try {
@@ -341,4 +351,3 @@ export const getRecommendedStories = async (storyId: number): Promise<NewsStory[
     return [];
   }
 };
-

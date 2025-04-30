@@ -135,6 +135,14 @@ const Index = () => {
     );
   };
 
+  console.log('Index rendering state:', {
+    loading,
+    featuredVideo: featuredVideo ? 'present' : 'null',
+    videosCount: videos.length,
+    filteredVideosCount: filteredVideos.length,
+    loadError: loadError || 'none'
+  });
+
   if (loading) {
     return (
       <Layout>

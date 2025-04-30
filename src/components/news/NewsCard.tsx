@@ -30,6 +30,9 @@ const NewsCard: React.FC<NewsCardProps> = ({ story, variant = 'default', size })
     navigate(`/story/${story.id}`);
   };
   
+  // Debug story data
+  console.log('Rendering NewsCard with story:', story);
+  
   const getClearanceBadge = (clearance: string) => {
     switch (clearance) {
       case 'LICENSED':
