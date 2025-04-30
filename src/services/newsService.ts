@@ -1,9 +1,16 @@
+
 import { APIStory, APIStoryResponse, NewsStory } from '@/types/news';
 import { toast } from '@/components/ui/use-toast';
 
 const API_ENDPOINT = 'https://newswire-story-recommendation.staging.storyful.com/api/stories';
 const STORIES_CACHE_KEY = 'newswire_stories_cache';
 const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes
+
+// Add cache buster to URL to prevent caching
+const addCacheBuster = (url: string): string => {
+  const separator = url.includes('?') ? '&' : '?';
+  return `${url}${separator}_t=${Date.now()}`;
+};
 
 // Utility function to handle errors
 const handleErrors = async (response: Response) => {
