@@ -1,6 +1,5 @@
 
 import { NewsStory } from '@/types/news';
-import { toast } from '@/components/ui/use-toast';
 import { fetchData } from '@/utils/apiUtils';
 import { getMockData, getMockStoryResult } from '@/utils/mockDataUtils';
 import { transformAPIStory, transformNewsAPIStory, parseRawApiData } from '@/utils/transformUtils';
@@ -12,9 +11,18 @@ const STORYFUL_API = 'https://newswire-story-recommendation.staging.storyful.com
 const FALLBACK_API = 'https://newsapi.org/v2';
 const FALLBACK_API_KEY = '1e1c1fbb85be4bb3a635f8e83d87791e';
 
+// Flag to determine if we should use mock data by default
+const USE_MOCK_DATA = true; // Set to true since we know the APIs have CORS issues
+
 export const fetchStoryById = async (id: string): Promise<{ story: NewsStory; similarStories: NewsStory[] }> => {
   try {
     console.log(`Fetching story with ID: ${id}`);
+    
+    // If mock data mode is enabled, immediately return mock data
+    if (USE_MOCK_DATA) {
+      console.log(`Using mock data for story ID: ${id} (APIs disabled)`);
+      return getMockStoryResult(id);
+    }
     
     try {
       // Try using the Storyful API directly to get a story
@@ -81,12 +89,6 @@ export const fetchStoryById = async (id: string): Promise<{ story: NewsStory; si
   } catch (error) {
     console.error('All API attempts failed. Using mock data as last resort.', error);
     
-    toast({
-      title: "API Connection Issue",
-      description: "Using sample data. All API endpoints failed.",
-      variant: "destructive",
-    });
-    
     console.log(`Returning mock story for ID: ${id}`);
     return getMockStoryResult(id);
   }
@@ -98,6 +100,14 @@ import { getTopStories } from './newsService';
 export const getStoryBySlug = async (slug: string): Promise<NewsStory | undefined> => {
   try {
     console.log(`Looking for story with slug: ${slug}`);
+    
+    // If mock data is enabled, use mock data
+    if (USE_MOCK_DATA) {
+      // For mock data, just use the slug as the ID
+      const mockId = isNaN(parseInt(slug)) ? 200001 : parseInt(slug);
+      const result = await getMockStoryResult(mockId);
+      return result.story;
+    }
     
     // Attempt to parse ID from slug if it's numeric
     if (/^\d+$/.test(slug)) {
@@ -132,6 +142,10 @@ export const getStoryBySlug = async (slug: string): Promise<NewsStory | undefine
 export const getRecommendedStories = async (storyId: number): Promise<NewsStory[]> => {
   try {
     console.log(`Getting recommended stories for ID: ${storyId}`);
+    if (USE_MOCK_DATA) {
+      const result = await getMockStoryResult(storyId.toString());
+      return result.similarStories;
+    }
     const result = await fetchStoryById(storyId.toString());
     return result.similarStories;
   } catch (error) {

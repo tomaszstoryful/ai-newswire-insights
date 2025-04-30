@@ -1,6 +1,5 @@
 
 import { NewsStory } from '@/types/news';
-import { toast } from '@/components/ui/use-toast';
 import { fetchData } from '@/utils/apiUtils';
 import { getMockData } from '@/utils/mockDataUtils';
 import { transformAPIStory, transformNewsAPIStory, parseRawApiData } from '@/utils/transformUtils';
@@ -12,6 +11,9 @@ export const STORYFUL_API = 'https://newswire-story-recommendation.staging.story
 // Fallback API endpoint to use if Storyful API fails
 export const FALLBACK_API = 'https://newsapi.org/v2';
 export const FALLBACK_API_KEY = '1e1c1fbb85be4bb3a635f8e83d87791e';
+
+// Flag to determine if we should use mock data by default (due to known API limitations)
+const USE_MOCK_DATA = true; // Set to true since we know the APIs have CORS issues
 
 export const getTopStories = async (forceRefresh: boolean = false): Promise<NewsStory[]> => {
   try {
@@ -26,6 +28,17 @@ export const getTopStories = async (forceRefresh: boolean = false): Promise<News
       }
     } else {
       console.log('Force refresh requested, bypassing cache');
+    }
+    
+    // If mock data mode is enabled, skip the API calls altogether
+    if (USE_MOCK_DATA) {
+      console.log('Using mock data by default (APIs disabled)');
+      const mockStories = Array.from({ length: 10 }, (_, i) => getMockData(200000 + i));
+      
+      // Store mock stories in cache too
+      saveToCache(mockStories);
+      
+      return mockStories;
     }
     
     console.log('Fetching fresh stories from Storyful API...');
@@ -49,12 +62,6 @@ export const getTopStories = async (forceRefresh: boolean = false): Promise<News
         
         // Cache the result
         saveToCache(stories);
-        
-        // Show success toast
-        toast({
-          title: "Stories updated",
-          description: `Successfully loaded ${stories.length} latest stories from Storyful.`,
-        });
         
         return stories;
       } else {
@@ -85,11 +92,6 @@ export const getTopStories = async (forceRefresh: boolean = false): Promise<News
           // Cache the result
           saveToCache(stories);
           
-          toast({
-            title: "Stories updated (fallback)",
-            description: `Using NewsAPI fallback. Loaded ${stories.length} stories.`,
-          });
-          
           return stories;
         } else {
           throw new Error("NewsAPI returned invalid response");
@@ -101,12 +103,6 @@ export const getTopStories = async (forceRefresh: boolean = false): Promise<News
     }
   } catch (error) {
     console.error('All API attempts failed. Using mock data:', error);
-    
-    toast({
-      title: "API Connection Issue",
-      description: "Using sample data. All API endpoints failed.",
-      variant: "destructive",
-    });
     
     // Return mock data as a last resort
     const mockStories = Array.from({ length: 10 }, (_, i) => getMockData(200000 + i));
