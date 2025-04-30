@@ -1,18 +1,9 @@
-
 import { APIStory, APIStoryResponse, NewsStory } from '@/types/news';
 import { toast } from '@/components/ui/use-toast';
 
-const API_BASE_URL = ''; // Empty base URL to use direct requests
 const API_ENDPOINT = 'https://newswire-story-recommendation.staging.storyful.com/api/stories';
 const STORIES_CACHE_KEY = 'newswire_stories_cache';
 const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes
-
-// List of CORS proxies to try in order
-const CORS_PROXIES = [
-  'https://corsproxy.io/?',
-  'https://api.allorigins.win/raw?url=',
-  'https://cors-anywhere.herokuapp.com/'
-];
 
 // Utility function to handle errors
 const handleErrors = async (response: Response) => {
@@ -24,89 +15,32 @@ const handleErrors = async (response: Response) => {
   return response;
 };
 
-// Helper function to add cache busting parameter
-const addCacheBuster = (url: string): string => {
-  const separator = url.includes('?') ? '&' : '?';
-  return `${url}${separator}_t=${Date.now()}`;
-};
-
-// Direct fetch without proxy (to be attempted first)
-const fetchWithoutProxy = async <T>(url: string): Promise<T | null> => {
+// Fetch data directly from the API
+const fetchData = async <T>(endpoint: string, params?: string): Promise<T> => {
+  const targetUrl = params ? `${endpoint}${params}` : endpoint;
+  console.log(`Attempting direct fetch to: ${addCacheBuster(targetUrl)}`);
+  
   try {
-    console.log(`Attempting direct fetch to: ${url}`);
-    // Using no-cors mode to see if we can at least connect
-    const response = await fetch(url, {
+    const response = await fetch(addCacheBuster(targetUrl), {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
         'Cache-Control': 'no-cache, no-store, must-revalidate'
-      },
-      mode: 'cors', // Try standard CORS first
-      credentials: 'omit' // Don't send cookies
+      }
     });
+    
     await handleErrors(response);
     const data = await response.json();
-    console.log(`Direct fetch successful: ${url}`);
+    console.log(`Direct fetch successful: ${targetUrl}`);
     return data as T;
   } catch (error) {
-    console.log(`Direct fetch failed: ${error}`);
-    return null;
+    console.error(`Direct fetch failed: ${error}`);
+    throw new Error(`Failed to fetch data: ${(error as Error).message}`);
   }
 };
 
-// Function to fetch data from the API with retries through different proxies
-const fetchData = async <T>(endpoint: string, params?: string): Promise<T> => {
-  const targetUrl = params ? `${endpoint}${params}` : endpoint;
-  const errors: Error[] = [];
-  
-  console.log('Starting fetchData with URL:', targetUrl);
-  
-  // Try direct fetch first if it's a GET request and simple URL
-  try {
-    const directResult = await fetchWithoutProxy<T>(addCacheBuster(targetUrl));
-    if (directResult) {
-      return directResult;
-    }
-  } catch (error) {
-    console.log('Direct fetch failed, trying proxies...');
-  }
-
-  // Try each proxy in sequence
-  for (const proxy of CORS_PROXIES) {
-    try {
-      // Add cache busting parameter to avoid stale data
-      const url = proxy.includes('?url=') 
-        ? `${proxy}${encodeURIComponent(addCacheBuster(targetUrl))}`
-        : `${proxy}${addCacheBuster(targetUrl)}`;
-      
-      console.log(`Trying to fetch from: ${url}`);
-      
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Cache-Control': 'no-cache, no-store, must-revalidate'
-        },
-        credentials: 'omit' // Don't send cookies
-      });
-      await handleErrors(response);
-      const data = await response.json();
-      console.log(`Successfully fetched data from ${url}`);
-      return data as T;
-    } catch (error) {
-      console.error(`Error fetching with proxy ${proxy}:`, error);
-      errors.push(error as Error);
-    }
-  }
-
-  // If we get here, all proxies failed
-  console.error('All CORS proxies failed');
-  throw new Error(`Failed to fetch data: ${errors[0]?.message || 'Unknown error'}`);
-};
-
-// Mock data to use as fallback when all proxies fail
+// Mock data to use as fallback when API requests fail
 const getMockData = (storyId?: string | number): NewsStory => {
   return {
     id: storyId ? Number(storyId) : 12345,
@@ -228,7 +162,7 @@ export const fetchStoryById = async (id: string): Promise<{ story: NewsStory; si
         }
       }
     } catch (error) {
-      console.error('All API endpoints failed. Using mock data as fallback.', error);
+      console.error('API endpoint failed. Using mock data as fallback.', error);
       
       // Show toast to indicate mock data is being used
       toast({
@@ -312,7 +246,7 @@ export const getTopStories = async (forceRefresh: boolean = false): Promise<News
       console.log(`Successfully fetched ${stories.length} stories`);
       return stories;
     } catch (error) {
-      console.error('API endpoints failed. Using mock data as fallback for top stories.', error);
+      console.error('API endpoint failed. Using mock data as fallback for top stories.', error);
       
       // Show toast to user
       toast({
