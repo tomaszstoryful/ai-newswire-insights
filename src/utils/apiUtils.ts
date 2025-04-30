@@ -1,3 +1,4 @@
+
 // Handle API request utilities
 
 // Add cache buster to URL to prevent caching
@@ -35,14 +36,21 @@ export const fetchData = async <T>(endpoint: string, params?: string): Promise<T
     console.log(`Attempt ${i+1}: Fetching via ${i === 0 ? 'direct connection' : 'proxy'}: ${proxyUrl}`);
     
     try {
+      // Add a longer timeout for API requests
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10-second timeout
+      
       const response = await fetch(proxyUrl, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
           'Cache-Control': 'no-cache, no-store, must-revalidate'
-        }
+        },
+        signal: controller.signal
       });
+      
+      clearTimeout(timeoutId); // Clear the timeout since the request completed
       
       await handleErrors(response);
       const data = await response.json();

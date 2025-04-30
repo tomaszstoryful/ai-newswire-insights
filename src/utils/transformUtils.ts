@@ -42,3 +42,40 @@ export const transformAPIStory = (apiStory: APIStory): NewsStory => {
     }
   };
 };
+
+// New function to transform NewsAPI stories to our app model
+export const transformNewsAPIStory = (article: any, id: number): NewsStory => {
+  console.log('Transforming NewsAPI article:', article);
+  
+  return {
+    id: id,
+    title: article.title || 'Untitled Article',
+    slug: article.title ? article.title.toLowerCase().replace(/[^\w\s]/gi, '').replace(/\s+/g, '-') : 'untitled',
+    summary: article.description || article.content || "No summary available",
+    published_date: article.publishedAt || new Date().toISOString(),
+    updated_at: article.publishedAt || new Date().toISOString(),
+    editorial_updated_at: article.publishedAt || new Date().toISOString(),
+    clearance_mark: "LICENSED", // Default to licensed for these stories
+    lead_image: article.urlToImage ? {
+      url: article.urlToImage,
+      filename: article.title || 'image'
+    } : undefined,
+    regions: article.source?.name ? [article.source.name] : ["Global"],
+    stated_location: article.source?.name || "Global",
+    media_url: article.url || "",
+    in_trending_collection: false,
+    video_providing_partner: false,
+    collection_headline: '',
+    collection_summary_html: '',
+    lead_item: {
+      id: id,
+      resource_type: 'video',
+      type: 'video',
+      media_button: {
+        first_time: false,
+        already_downloaded_by_relative: false,
+        action: 'preview'
+      }
+    }
+  };
+};

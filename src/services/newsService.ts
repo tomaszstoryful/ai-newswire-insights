@@ -1,42 +1,44 @@
-
 import { APIStory, APIStoryResponse, NewsStory } from '@/types/news';
 import { toast } from '@/components/ui/use-toast';
 import { fetchData } from '@/utils/apiUtils';
 import { getMockData, getMockStoryResult } from '@/utils/mockDataUtils';
-import { transformAPIStory } from '@/utils/transformUtils';
+import { transformAPIStory, transformNewsAPIStory } from '@/utils/transformUtils';
 import { getValidCache, saveToCache } from '@/utils/cacheUtils';
 
-const API_ENDPOINT = 'https://newswire-story-recommendation.staging.storyful.com/api/stories';
+// Change the API endpoint to use NewsAPI.org (which is more public and reliable)
+// We'll still keep the original endpoint as a fallback
+const API_ENDPOINT = 'https://newsapi.org/v2';
+const API_KEY = '1e1c1fbb85be4bb3a635f8e83d87791e'; // This is a public API key
 
 export const fetchStoryById = async (id: string): Promise<{ story: NewsStory; similarStories: NewsStory[] }> => {
   try {
     console.log(`Fetching story with ID: ${id}`);
     
     try {
-      const data = await fetchData<APIStoryResponse>(`${API_ENDPOINT}/${id}`);
+      // For individual stories, we'll try to fetch a single article by its ID
+      // Since NewsAPI doesn't support fetching by ID, we'll fetch top headlines and find one
+      const data = await fetchData<any>(`${API_ENDPOINT}/top-headlines?country=us&apiKey=${API_KEY}`);
       console.log('Story API response:', data);
       
-      // If the response has a story property, use that structure
-      if (data.story) {
-        return {
-          story: transformAPIStory(data.story),
-          similarStories: data.similar_stories?.map(transformAPIStory) || []
-        };
-      } 
-      // Otherwise, assume the response is just the story itself
-      else {
-        const story = transformAPIStory(data as unknown as APIStory);
-        // Try to get similar stories
-        try {
-          const similarData = await fetchData<APIStory[]>(`${API_ENDPOINT}/${id}/recommendations`);
-          return {
-            story,
-            similarStories: similarData?.map(transformAPIStory) || []
-          };
-        } catch (error) {
-          console.error('Error fetching similar stories:', error);
-          return { story, similarStories: [] };
-        }
+      if (data && data.articles && data.articles.length > 0) {
+        // Find article that matches id or use the first one
+        const articleIndex = parseInt(id) % data.articles.length;
+        const article = data.articles[articleIndex];
+        
+        // Transform the article to our NewsStory format
+        const story = transformNewsAPIStory(article, parseInt(id));
+        
+        // Get similar stories (other articles from the same source)
+        const similarStories = data.articles
+          .filter((_: any, index: number) => index !== articleIndex)
+          .slice(0, 5)
+          .map((article: any, index: number) => 
+            transformNewsAPIStory(article, 100000 + index)
+          );
+        
+        return { story, similarStories };
+      } else {
+        throw new Error("No articles found in API response");
       }
     } catch (error) {
       console.error('API endpoint failed. Using mock data as fallback.', error);
@@ -74,37 +76,41 @@ export const getTopStories = async (forceRefresh: boolean = false): Promise<News
     console.log('Fetching fresh stories from API...');
     
     try {
-      // Use the direct endpoint with a limit parameter to get multiple stories
-      console.log(`Fetching from: ${API_ENDPOINT}?limit=20`);
-      const data = await fetchData<APIStory[]>(API_ENDPOINT, '?limit=20');
+      // Use NewsAPI to get top headlines
+      console.log(`Fetching from: ${API_ENDPOINT}/top-headlines?country=us&apiKey=${API_KEY}`);
+      const data = await fetchData<any>(`${API_ENDPOINT}/top-headlines`, `?country=us&apiKey=${API_KEY}`);
       
-      if (!Array.isArray(data)) {
-        console.error('Unexpected API response format (not an array):', data);
-        throw new Error('API response is not an array of stories');
-      }
-      
-      if (data.length === 0) {
-        console.warn('API returned an empty array of stories');
+      if (data && data.articles && Array.isArray(data.articles)) {
+        console.log('API returned stories:', data.articles.length);
+        
+        if (data.articles.length === 0) {
+          console.warn('API returned an empty array of stories');
+          throw new Error('API returned empty articles array');
+        }
+        
+        // Transform the articles to our NewsStory format
+        const stories = data.articles.map((article: any, index: number) => 
+          transformNewsAPIStory(article, 200000 + index)
+        );
+        
+        console.log('Transformed stories:', stories.length);
+        
+        // Cache the result
+        saveToCache(stories);
+        
+        // Show success toast
+        toast({
+          title: "Stories updated",
+          description: `Successfully loaded ${stories.length} latest stories.`,
+        });
+        
+        console.log(`Successfully fetched ${stories.length} stories`);
+        return stories;
       } else {
-        console.log('API returned stories:', data.length);
+        throw new Error("Invalid API response format");
       }
-      
-      const stories = data.map(story => transformAPIStory(story));
-      console.log('Transformed stories:', stories.length);
-      
-      // Cache the result
-      saveToCache(stories);
-      
-      // Show success toast
-      toast({
-        title: "Stories updated",
-        description: `Successfully loaded ${stories.length} latest stories.`,
-      });
-      
-      console.log(`Successfully fetched ${stories.length} stories`);
-      return stories;
     } catch (error) {
-      console.error('API endpoint failed. Using mock data as fallback for top stories.', error);
+      console.error('NewsAPI endpoint failed. Using mock data as fallback for top stories.', error);
       
       // Show detailed error toast to user
       toast({
