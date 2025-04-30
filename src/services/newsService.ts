@@ -1,3 +1,4 @@
+
 import { APIStory, APIStoryResponse, NewsStory } from '@/types/news';
 import { toast } from '@/components/ui/use-toast';
 import { fetchData } from '@/utils/apiUtils';
@@ -94,15 +95,21 @@ export const getTopStories = async (forceRefresh: boolean = false): Promise<News
       // Cache the result
       saveToCache(stories);
       
+      // Show success toast
+      toast({
+        title: "Stories updated",
+        description: `Successfully loaded ${stories.length} latest stories.`,
+      });
+      
       console.log(`Successfully fetched ${stories.length} stories`);
       return stories;
     } catch (error) {
       console.error('API endpoint failed. Using mock data as fallback for top stories.', error);
       
-      // Show toast to user
+      // Show detailed error toast to user
       toast({
         title: "API Connection Issue",
-        description: "Using sample data. Please check your connection and try again later.",
+        description: "Using sample data. API may be down or have CORS restrictions.",
         variant: "destructive",
       });
       

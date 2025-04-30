@@ -1,4 +1,3 @@
-
 // Handle API request utilities
 
 // Add cache buster to URL to prevent caching
@@ -17,27 +16,49 @@ export const handleErrors = async (response: Response) => {
   return response;
 };
 
-// Fetch data directly from the API
+// List of CORS proxies to try in order
+const corsProxies = [
+  (url: string) => url, // First try direct access without proxy
+  (url: string) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+  (url: string) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+  (url: string) => `https://cors.bridged.cc/${url}`
+];
+
+// Fetch data with multiple CORS proxy fallbacks
 export const fetchData = async <T>(endpoint: string, params?: string): Promise<T> => {
   const targetUrl = params ? `${endpoint}${params}` : endpoint;
-  console.log(`Attempting direct fetch to: ${addCacheBuster(targetUrl)}`);
+  console.log(`Starting fetch attempts to: ${targetUrl}`);
   
-  try {
-    const response = await fetch(addCacheBuster(targetUrl), {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Cache-Control': 'no-cache, no-store, must-revalidate'
-      }
-    });
+  // Try each proxy in sequence
+  for (let i = 0; i < corsProxies.length; i++) {
+    const proxyUrl = corsProxies[i](addCacheBuster(targetUrl));
+    console.log(`Attempt ${i+1}: Fetching via ${i === 0 ? 'direct connection' : 'proxy'}: ${proxyUrl}`);
     
-    await handleErrors(response);
-    const data = await response.json();
-    console.log(`Direct fetch successful: ${targetUrl}`);
-    return data as T;
-  } catch (error) {
-    console.error(`Direct fetch failed: ${error}`);
-    throw new Error(`Failed to fetch data: ${(error as Error).message}`);
+    try {
+      const response = await fetch(proxyUrl, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate'
+        }
+      });
+      
+      await handleErrors(response);
+      const data = await response.json();
+      console.log(`Fetch successful via ${i === 0 ? 'direct connection' : 'proxy'} for: ${targetUrl}`);
+      return data as T;
+    } catch (error) {
+      console.error(`Fetch attempt ${i+1} failed:`, error);
+      // If this is the last proxy in our list, throw the error
+      if (i === corsProxies.length - 1) {
+        throw new Error(`All fetch attempts failed for ${targetUrl}: ${(error as Error).message}`);
+      }
+      // Otherwise continue to the next proxy
+      console.log(`Trying next proxy...`);
+    }
   }
+  
+  // This should never execute due to the error handling above, but TypeScript needs it
+  throw new Error(`Failed to fetch data after all attempts`);
 };
