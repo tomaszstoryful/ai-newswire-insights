@@ -21,6 +21,11 @@ export const handleErrors = async (response: Response) => {
     try {
       const text = await response.text();
       console.log('Error response body:', text.substring(0, 500)); // Log first 500 chars only
+      
+      // Check for specific CORS error messages
+      if (text.includes('cors') || text.includes('CORS')) {
+        console.error('CORS error detected in response');
+      }
     } catch (e) {
       console.log('Could not read error response body');
     }
@@ -47,9 +52,23 @@ export const toJson = async (response: Response) => {
   }
 };
 
-// Enhanced list of fetch strategies with more proxy options
+// Enhanced list of fetch strategies with more proxy options and better error handling
 const fetchStrategies = [
-  // Direct fetch with minimal headers to reduce CORS issues
+  // Direct fetch with all necessary headers to minimize CORS issues
+  async (url: string) => {
+    console.log('Trying direct fetch with access-control headers');
+    return fetch(url, {
+      method: 'GET',
+      mode: 'cors',
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+      },
+      credentials: 'omit' // Don't send cookies to avoid CORS preflight
+    });
+  },
+  
+  // Using fetch with minimal headers
   async (url: string) => {
     console.log('Trying direct fetch with minimal headers');
     return fetch(url, {
@@ -67,9 +86,9 @@ const fetchStrategies = [
     });
   },
   
-  // Using allorigins.win proxy
+  // Using allorigins.win proxy (more reliable)
   async (url: string) => {
-    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
     console.log('Trying allorigins.win proxy:', proxyUrl);
     return fetch(proxyUrl);
   },
@@ -84,7 +103,7 @@ const fetchStrategies = [
   // Using cors-anywhere
   async (url: string) => {
     const proxyUrl = `https://cors-anywhere.herokuapp.com/${url}`;
-    console.log('Trying cors-anywhere proxy (requires temporary access):', proxyUrl);
+    console.log('Trying cors-anywhere proxy:', proxyUrl);
     return fetch(proxyUrl);
   },
   
@@ -111,7 +130,10 @@ export const fetchData = async <T>(endpoint: string, params?: string): Promise<T
     try {
       // Add a timeout for each fetch attempt
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10-second timeout
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+        console.log(`Fetch strategy ${i} timed out for ${urlWithCache}`);
+      }, 15000); // 15-second timeout
       
       const strategy = fetchStrategies[i];
       const response = await strategy(urlWithCache);
@@ -119,9 +141,27 @@ export const fetchData = async <T>(endpoint: string, params?: string): Promise<T
       clearTimeout(timeoutId); // Clear the timeout
       
       // For no-cors mode, we can't check status or parse JSON, so just return empty array
-      if (i === 1) { // Index of the no-cors strategy
+      if (i === 2) { // Index of the no-cors strategy
         console.log('No-cors mode fetch completed, but response content is opaque');
         return [] as unknown as T;
+      }
+      
+      // Special handling for allorigins.win which returns data in a specific format
+      if (i === 3) { // Index of the allorigins.win strategy
+        await handleErrors(response);
+        const result = await toJson(response);
+        
+        if (result && typeof result === 'object' && 'contents' in result) {
+          console.log('AllOrigins proxy returned data');
+          try {
+            // Parse the contents string as JSON
+            const contents = JSON.parse(result.contents as string);
+            return contents as T;
+          } catch (e) {
+            console.log('AllOrigins returned non-JSON content:', (result.contents as string).substring(0, 100));
+            return result.contents as unknown as T;
+          }
+        }
       }
       
       await handleErrors(response);

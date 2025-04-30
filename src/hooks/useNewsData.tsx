@@ -17,7 +17,7 @@ export const useNewsData = () => {
   // Memoized fetch function to avoid recreating it on each render
   const fetchVideos = useCallback(async (showToast = false, forceRefresh = false) => {
     try {
-      console.log(`Starting to fetch videos (forceRefresh: ${forceRefresh})...`);
+      console.log(`Starting to fetch videos (forceRefresh: ${forceRefresh}, showToast: ${showToast})...`);
       if (showToast) {
         setIsRefreshing(true);
         toast({
@@ -30,15 +30,18 @@ export const useNewsData = () => {
       
       setLoadError(null);
       
-      // Force refresh on manual refresh button click
+      // Always use force refresh when manually refreshing
       const allVideos = await getTopStories(forceRefresh);
       console.log('Fetched videos:', allVideos.length);
       
-      if (allVideos.length > 0) {
+      if (allVideos && allVideos.length > 0) {
         // Set featured video to the first item
         setFeaturedVideo(allVideos[0]);
+        console.log('Set featured video:', allVideos[0].id);
+        
         // Set the rest of the videos
         setVideos(allVideos.slice(1));
+        console.log('Set regular videos:', allVideos.slice(1).length);
         
         // Reset retry count on success
         setRetryCount(0);
@@ -81,7 +84,7 @@ export const useNewsData = () => {
         console.log(`Auto-retrying fetch (${retryCount + 1}/${maxRetries})...`);
         
         // Wait longer between retries (exponential backoff)
-        const retryDelay = Math.min(2000 * Math.pow(1.5, retryCount), 10000);
+        const retryDelay = Math.min(2000 * Math.pow(2, retryCount), 30000);
         console.log(`Retrying in ${retryDelay}ms`);
         
         setTimeout(() => {

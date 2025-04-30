@@ -16,8 +16,8 @@ export const transformAPIStory = (apiStory: APIStory): NewsStory => {
     }
   };
   
-  // Ensure we have a valid ID
-  const id = apiStory.id ? parseInt(apiStory.id) : Math.floor(Math.random() * 900000) + 100000;
+  // Ensure we have a valid ID (handle both string and number)
+  const id = apiStory.id ? parseInt(apiStory.id.toString()) : Math.floor(Math.random() * 900000) + 100000;
   
   // Create a cleaner slug from title or ID
   const title = apiStory.title || 'Untitled';
@@ -30,8 +30,21 @@ export const transformAPIStory = (apiStory: APIStory): NewsStory => {
   // Make sure we have a valid date
   const pubDate = apiStory.published_date || new Date().toISOString();
   
-  // Extract regions/categories
-  const regions = apiStory.categories ? safeJsonParse(apiStory.categories) : [];
+  // Extract regions/categories with better error handling
+  let regions: string[] = [];
+  if (apiStory.categories) {
+    if (typeof apiStory.categories === 'string') {
+      regions = safeJsonParse(apiStory.categories);
+    } else if (Array.isArray(apiStory.categories)) {
+      regions = apiStory.categories;
+    }
+  }
+  
+  // Ensure we have a lead image, even if just a placeholder
+  const leadImage = apiStory.image_url ? {
+    url: apiStory.image_url,
+    filename: title || `image-${apiStory.id}`
+  } : undefined;
   
   return {
     id: id,
@@ -42,10 +55,7 @@ export const transformAPIStory = (apiStory: APIStory): NewsStory => {
     updated_at: pubDate,
     editorial_updated_at: pubDate,
     clearance_mark: apiStory.story_mark_clearance || "LICENSED",
-    lead_image: apiStory.image_url ? {
-      url: apiStory.image_url,
-      filename: title || `image-${apiStory.id}`
-    } : undefined,
+    lead_image: leadImage,
     regions: regions,
     stated_location: apiStory.stated_location || "Unknown",
     media_url: apiStory.media_url || "",
@@ -70,14 +80,26 @@ export const transformAPIStory = (apiStory: APIStory): NewsStory => {
 export const transformNewsAPIStory = (article: any, id: number): NewsStory => {
   console.log('Transforming NewsAPI article:', article);
   
+  // Ensure title is valid
+  const title = article.title || 'Untitled Article';
+  
+  // Create a valid slug
+  const slug = article.title ? article.title.toLowerCase().replace(/[^\w\s]/gi, '').replace(/\s+/g, '-') : 'untitled';
+  
+  // Combine available content for summary
+  const summary = article.description || article.content || "No summary available";
+  
+  // Ensure dates are valid
+  const pubDate = article.publishedAt || new Date().toISOString();
+  
   return {
     id: id,
-    title: article.title || 'Untitled Article',
-    slug: article.title ? article.title.toLowerCase().replace(/[^\w\s]/gi, '').replace(/\s+/g, '-') : 'untitled',
-    summary: article.description || article.content || "No summary available",
-    published_date: article.publishedAt || new Date().toISOString(),
-    updated_at: article.publishedAt || new Date().toISOString(),
-    editorial_updated_at: article.publishedAt || new Date().toISOString(),
+    title: title,
+    slug: slug,
+    summary: summary,
+    published_date: pubDate,
+    updated_at: pubDate,
+    editorial_updated_at: pubDate,
     clearance_mark: "LICENSED", // Default to licensed for these stories
     lead_image: article.urlToImage ? {
       url: article.urlToImage,
@@ -106,6 +128,12 @@ export const transformNewsAPIStory = (article: any, id: number): NewsStory => {
 // Helper function to parse raw API data - this handles malformed or unusual formats
 export const parseRawApiData = (data: any): APIStory[] => {
   console.log('Parsing raw API data, type:', typeof data);
+  
+  // If data is null or undefined, return empty array
+  if (!data) {
+    console.error('API returned null or undefined data');
+    return [];
+  }
   
   // If data is a string (happens with some proxies), try to parse it
   if (typeof data === 'string') {
@@ -140,6 +168,28 @@ export const parseRawApiData = (data: any): APIStory[] => {
     if (data.results && Array.isArray(data.results)) {
       console.log(`API returned object with results array (${data.results.length} items)`);
       return data.results;
+    }
+    
+    if (data.articles && Array.isArray(data.articles)) {
+      console.log(`API returned object with articles array (${data.articles.length} items)`);
+      // Map articles to expected APIStory format
+      return data.articles.map((article: any, index: number) => ({
+        id: (200000 + index).toString(),
+        title: article.title || 'Untitled',
+        title_slug: article.title?.toLowerCase().replace(/[^\w\s]/gi, '').replace(/\s+/g, '-') || 'untitled',
+        summary: article.description || article.content || 'No summary available',
+        extended_summary: article.content || '',
+        published_date: article.publishedAt || new Date().toISOString(),
+        story_mark_clearance: 'LICENSED',
+        image_url: article.urlToImage || '',
+        media_url: article.url || '',
+        provider_url: '',
+        categories: JSON.stringify([article.source?.name || 'News']),
+        channels: '',
+        collections: '',
+        keywords: '',
+        stated_location: article.source?.name || 'Global',
+      }));
     }
     
     // If it's a simple object, wrap it in an array

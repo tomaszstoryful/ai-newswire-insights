@@ -20,7 +20,7 @@ export const getTopStories = async (forceRefresh: boolean = false): Promise<News
     // Check if we have a valid cache and forceRefresh is false
     if (!forceRefresh) {
       const cachedStories = getValidCache();
-      if (cachedStories) {
+      if (cachedStories && cachedStories.length > 0) {
         console.log('Using cached stories:', cachedStories.length);
         return cachedStories;
       }

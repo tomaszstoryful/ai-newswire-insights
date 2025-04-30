@@ -20,14 +20,14 @@ export const fetchStoryById = async (id: string): Promise<{ story: NewsStory; si
       // Try using the Storyful API directly to get a story
       console.log(`Attempting to fetch single story from Storyful API`);
       const rawData = await fetchData<any>(STORYFUL_API);
-      console.log('Raw Storyful data received:', rawData);
+      console.log('Raw Storyful data received:', typeof rawData);
       
       const allStories = parseRawApiData(rawData);
       console.log('Parsed stories count:', allStories?.length || 0);
       
       if (allStories && allStories.length > 0) {
         // Find a story that matches the ID or use the first one as fallback
-        const story = allStories.find(s => s.id === id) || allStories[0];
+        const story = allStories.find(s => s.id === id || s.id?.toString() === id.toString()) || allStories[0];
         console.log('Found story:', story?.id || 'none');
         
         // Transform the story to our format
@@ -35,7 +35,7 @@ export const fetchStoryById = async (id: string): Promise<{ story: NewsStory; si
         
         // Get a few similar stories
         const similarStories = allStories
-          .filter(s => s.id !== story.id)
+          .filter(s => s.id !== story.id && s.id?.toString() !== story.id?.toString())
           .slice(0, 5)
           .map(transformAPIStory);
         
@@ -50,10 +50,13 @@ export const fetchStoryById = async (id: string): Promise<{ story: NewsStory; si
       
       // Try NewsAPI as fallback for individual stories
       try {
+        console.log('Trying NewsAPI fallback for story');
         const data = await fetchData<any>(`${FALLBACK_API}/top-headlines?country=us&apiKey=${FALLBACK_API_KEY}`);
         
         if (data && data.articles && data.articles.length > 0) {
-          const articleIndex = parseInt(id) % data.articles.length;
+          // Try to find story by ID or index
+          const idNumber = parseInt(id);
+          const articleIndex = !isNaN(idNumber) ? (idNumber % data.articles.length) : 0;
           const article = data.articles[articleIndex];
           
           const story = transformNewsAPIStory(article, parseInt(id));
@@ -64,8 +67,10 @@ export const fetchStoryById = async (id: string): Promise<{ story: NewsStory; si
               transformNewsAPIStory(article, 100000 + index)
             );
           
+          console.log(`Returning NewsAPI story ${story.id} with ${similarStories.length} similar stories`);
           return { story, similarStories };
         } else {
+          console.log('NewsAPI returned no articles');
           throw new Error("No fallback articles found");
         }
       } catch (newsApiError) {
@@ -82,6 +87,7 @@ export const fetchStoryById = async (id: string): Promise<{ story: NewsStory; si
       variant: "destructive",
     });
     
+    console.log(`Returning mock story for ID: ${id}`);
     return getMockStoryResult(id);
   }
 };
@@ -91,16 +97,28 @@ import { getTopStories } from './newsService';
 
 export const getStoryBySlug = async (slug: string): Promise<NewsStory | undefined> => {
   try {
+    console.log(`Looking for story with slug: ${slug}`);
+    
     // Attempt to parse ID from slug if it's numeric
     if (/^\d+$/.test(slug)) {
+      console.log('Slug is numeric, treating as ID');
       const result = await fetchStoryById(slug);
       return result.story;
     }
     
     // For non-numeric slugs, try to find from API
     try {
+      console.log('Fetching all stories to find by slug');
       const allStories = await getTopStories(true); // Force refresh to get latest stories
-      return allStories.find(story => story.slug === slug);
+      const matchedStory = allStories.find(story => story.slug === slug);
+      
+      if (matchedStory) {
+        console.log(`Found story with matching slug: ${matchedStory.id}`);
+      } else {
+        console.log('No story with matching slug found');
+      }
+      
+      return matchedStory;
     } catch (error) {
       console.error('Error finding story by slug:', error);
       return undefined;
@@ -113,6 +131,7 @@ export const getStoryBySlug = async (slug: string): Promise<NewsStory | undefine
 
 export const getRecommendedStories = async (storyId: number): Promise<NewsStory[]> => {
   try {
+    console.log(`Getting recommended stories for ID: ${storyId}`);
     const result = await fetchStoryById(storyId.toString());
     return result.similarStories;
   } catch (error) {
