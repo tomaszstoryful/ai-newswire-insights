@@ -76,55 +76,6 @@ export const transformAPIStory = (apiStory: APIStory): NewsStory => {
   };
 };
 
-// Transform NewsAPI stories to our app model
-export const transformNewsAPIStory = (article: any, id: number): NewsStory => {
-  console.log('Transforming NewsAPI article:', article);
-  
-  // Ensure title is valid
-  const title = article.title || 'Untitled Article';
-  
-  // Create a valid slug
-  const slug = article.title ? article.title.toLowerCase().replace(/[^\w\s]/gi, '').replace(/\s+/g, '-') : 'untitled';
-  
-  // Combine available content for summary
-  const summary = article.description || article.content || "No summary available";
-  
-  // Ensure dates are valid
-  const pubDate = article.publishedAt || new Date().toISOString();
-  
-  return {
-    id: id,
-    title: title,
-    slug: slug,
-    summary: summary,
-    published_date: pubDate,
-    updated_at: pubDate,
-    editorial_updated_at: pubDate,
-    clearance_mark: "LICENSED", // Default to licensed for these stories
-    lead_image: article.urlToImage ? {
-      url: article.urlToImage,
-      filename: article.title || 'image'
-    } : undefined,
-    regions: article.source?.name ? [article.source.name] : ["Global"],
-    stated_location: article.source?.name || "Global",
-    media_url: article.url || "",
-    in_trending_collection: false,
-    video_providing_partner: false,
-    collection_headline: '',
-    collection_summary_html: '',
-    lead_item: {
-      id: id,
-      resource_type: 'video',
-      type: 'video',
-      media_button: {
-        first_time: false,
-        already_downloaded_by_relative: false,
-        action: 'preview'
-      }
-    }
-  };
-};
-
 // Helper function to parse raw API data - this handles malformed or unusual formats
 export const parseRawApiData = (data: any): APIStory[] => {
   console.log('Parsing raw API data, type:', typeof data);
@@ -168,28 +119,6 @@ export const parseRawApiData = (data: any): APIStory[] => {
     if (data.results && Array.isArray(data.results)) {
       console.log(`API returned object with results array (${data.results.length} items)`);
       return data.results;
-    }
-    
-    if (data.articles && Array.isArray(data.articles)) {
-      console.log(`API returned object with articles array (${data.articles.length} items)`);
-      // Map articles to expected APIStory format
-      return data.articles.map((article: any, index: number) => ({
-        id: (200000 + index).toString(),
-        title: article.title || 'Untitled',
-        title_slug: article.title?.toLowerCase().replace(/[^\w\s]/gi, '').replace(/\s+/g, '-') || 'untitled',
-        summary: article.description || article.content || 'No summary available',
-        extended_summary: article.content || '',
-        published_date: article.publishedAt || new Date().toISOString(),
-        story_mark_clearance: 'LICENSED',
-        image_url: article.urlToImage || '',
-        media_url: article.url || '',
-        provider_url: '',
-        categories: JSON.stringify([article.source?.name || 'News']),
-        channels: '',
-        collections: '',
-        keywords: '',
-        stated_location: article.source?.name || 'Global',
-      }));
     }
     
     // If it's a simple object, wrap it in an array

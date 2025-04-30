@@ -2,23 +2,18 @@
 import { NewsStory } from '@/types/news';
 import { fetchData } from '@/utils/apiUtils';
 import { getMockData } from '@/utils/mockDataUtils';
-import { transformAPIStory, transformNewsAPIStory, parseRawApiData } from '@/utils/transformUtils';
+import { transformAPIStory, parseRawApiData } from '@/utils/transformUtils';
 import { getValidCache, saveToCache } from '@/utils/cacheUtils';
 import { toast } from '@/hooks/use-toast';
 
 // Primary API endpoint - using Storyful API
 export const STORYFUL_API = 'https://newswire-story-recommendation.staging.storyful.com/api/stories';
 
-// Fallback API endpoint to use if Storyful API fails
-export const FALLBACK_API = 'https://newsapi.org/v2';
-export const FALLBACK_API_KEY = '1e1c1fbb85be4bb3a635f8e83d87791e';
+// Flag to determine if we should use mock data as fallback if API fails
+const USE_MOCK_DATA_AS_FALLBACK = true;
 
-// Flag to determine if we should use mock data by default (due to known API limitations)
-// Using true here because NewsAPI doesn't allow browser requests except from localhost
-const USE_MOCK_DATA = true; // API has CORS restrictions that prevent browser requests
-
-// Variable to track if we've already shown the API limitation toast
-let hasShownApiLimitationMessage = false;
+// Variable to track if we've already shown an API error message
+let hasShownApiErrorMessage = false;
 
 export const getTopStories = async (forceRefresh: boolean = false): Promise<NewsStory[]> => {
   try {
@@ -35,32 +30,10 @@ export const getTopStories = async (forceRefresh: boolean = false): Promise<News
       console.log('Force refresh requested, bypassing cache');
     }
     
-    // If mock data mode is enabled, skip the API calls altogether
-    if (USE_MOCK_DATA) {
-      console.log('Using mock data due to API browser restrictions');
-      const mockStories = Array.from({ length: 10 }, (_, i) => getMockData(200000 + i));
-      
-      // Store mock stories in cache too
-      saveToCache(mockStories);
-      
-      // Show API limitation toast only once per session
-      if (!hasShownApiLimitationMessage) {
-        toast({
-          title: "Using Sample Data",
-          description: "NewsAPI limits browser requests to localhost only. Using sample stories instead.",
-          variant: "default",
-          duration: 5000,
-        });
-        hasShownApiLimitationMessage = true;
-      }
-      
-      return mockStories;
-    }
-    
     console.log('Fetching fresh stories from Storyful API...');
     
     try {
-      // Try using the Storyful API first
+      // Try using the Storyful API
       console.log(`Fetching from: ${STORYFUL_API}`);
       const rawData = await fetchData<any>(STORYFUL_API);
       console.log('Raw Storyful data received:', typeof rawData, Array.isArray(rawData));
@@ -83,62 +56,59 @@ export const getTopStories = async (forceRefresh: boolean = false): Promise<News
       } else {
         throw new Error("Storyful API returned empty or invalid response");
       }
-    } catch (storyfulError) {
-      console.error('Storyful API failed. Trying NewsAPI as fallback:', storyfulError);
+    } catch (apiError) {
+      console.error('Storyful API failed:', apiError);
       
-      // Try NewsAPI as fallback
-      try {
-        console.log(`Fetching from fallback: ${FALLBACK_API}/top-headlines`);
-        const newsApiData = await fetchData<any>(`${FALLBACK_API}/top-headlines?country=us&apiKey=${FALLBACK_API_KEY}`);
+      if (USE_MOCK_DATA_AS_FALLBACK) {
+        // Return mock data as a fallback
+        console.log('Using mock data as fallback after API failure');
+        const mockStories = Array.from({ length: 10 }, (_, i) => getMockData(200000 + i));
         
-        if (newsApiData && newsApiData.articles && Array.isArray(newsApiData.articles)) {
-          console.log('NewsAPI returned stories:', newsApiData.articles.length);
-          
-          if (newsApiData.articles.length === 0) {
-            throw new Error('NewsAPI returned empty articles array');
-          }
-          
-          // Transform the articles to our NewsStory format
-          const stories = newsApiData.articles.map((article: any, index: number) => 
-            transformNewsAPIStory(article, 200000 + index)
-          );
-          
-          console.log('Transformed stories from NewsAPI:', stories.length);
-          
-          // Cache the result
-          saveToCache(stories);
-          
-          return stories;
-        } else {
-          throw new Error("NewsAPI returned invalid response");
+        // Store mock stories in cache
+        saveToCache(mockStories);
+        
+        // Show API error toast only once per session
+        if (!hasShownApiErrorMessage) {
+          toast({
+            title: "API Connection Issue",
+            description: "Could not connect to the news API. Using sample data temporarily.",
+            variant: "destructive",
+            duration: 5000,
+          });
+          hasShownApiErrorMessage = true;
         }
-      } catch (newsApiError) {
-        console.error('NewsAPI fallback also failed:', newsApiError);
-        throw newsApiError; // rethrow to be caught by outer try/catch
+        
+        return mockStories;
       }
+      
+      throw apiError; // Re-throw if we're not using mock data as fallback
     }
   } catch (error) {
-    console.error('All API attempts failed. Using mock data as last resort:', error);
+    console.error('All API attempts failed:', error);
     
-    // Return mock data as a last resort
-    const mockStories = Array.from({ length: 10 }, (_, i) => getMockData(200000 + i));
-    
-    // Store mock stories in cache
-    saveToCache(mockStories);
-    
-    // Show a message about API limitations if we haven't already
-    if (!hasShownApiLimitationMessage) {
-      toast({
-        title: "Using Sample Data",
-        description: "API access is limited in browser environments. Using sample stories instead.",
-        variant: "default",
-        duration: 5000,
-      });
-      hasShownApiLimitationMessage = true;
+    if (USE_MOCK_DATA_AS_FALLBACK) {
+      // Return mock data as a last resort
+      console.log('Using mock data as final fallback');
+      const mockStories = Array.from({ length: 10 }, (_, i) => getMockData(200000 + i));
+      
+      // Store mock stories in cache
+      saveToCache(mockStories);
+      
+      // Show API error message if we haven't already
+      if (!hasShownApiErrorMessage) {
+        toast({
+          title: "API Connection Issue",
+          description: "Could not connect to the news API. Using sample data temporarily.",
+          variant: "destructive",
+          duration: 5000,
+        });
+        hasShownApiErrorMessage = true;
+      }
+      
+      return mockStories;
     }
     
-    console.log('Returning mock stories:', mockStories.length);
-    return mockStories;
+    throw error; // Re-throw if we're not using mock data as fallback
   }
 };
 

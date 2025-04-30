@@ -2,28 +2,17 @@
 import { NewsStory } from '@/types/news';
 import { fetchData } from '@/utils/apiUtils';
 import { getMockData, getMockStoryResult } from '@/utils/mockDataUtils';
-import { transformAPIStory, transformNewsAPIStory, parseRawApiData } from '@/utils/transformUtils';
+import { transformAPIStory, parseRawApiData } from '@/utils/transformUtils';
 
 // Primary API endpoint - using Storyful API
 const STORYFUL_API = 'https://newswire-story-recommendation.staging.storyful.com/api/stories';
 
-// Fallback API endpoint to use if Storyful API fails
-const FALLBACK_API = 'https://newsapi.org/v2';
-const FALLBACK_API_KEY = '1e1c1fbb85be4bb3a635f8e83d87791e';
-
-// Flag to determine if we should use mock data by default
-// Using true here because NewsAPI doesn't allow browser requests except from localhost
-const USE_MOCK_DATA = true; // API has CORS restrictions that prevent browser requests
+// Flag to determine if we should use mock data as fallback if API fails
+const USE_MOCK_DATA_AS_FALLBACK = true;
 
 export const fetchStoryById = async (id: string): Promise<{ story: NewsStory; similarStories: NewsStory[] }> => {
   try {
     console.log(`Fetching story with ID: ${id}`);
-    
-    // If mock data mode is enabled, immediately return mock data
-    if (USE_MOCK_DATA) {
-      console.log(`Using mock data for story ID: ${id} (API has browser restrictions)`);
-      return getMockStoryResult(id);
-    }
     
     try {
       // Try using the Storyful API directly to get a story
@@ -54,44 +43,25 @@ export const fetchStoryById = async (id: string): Promise<{ story: NewsStory; si
         console.log("No stories found in API response");
         throw new Error("No stories found in API response");
       }
-    } catch (storyfulError) {
-      console.error('Storyful API failed. Trying fallback NewsAPI:', storyfulError);
+    } catch (apiError) {
+      console.error('Storyful API failed:', apiError);
       
-      // Try NewsAPI as fallback for individual stories
-      try {
-        console.log('Trying NewsAPI fallback for story');
-        const data = await fetchData<any>(`${FALLBACK_API}/top-headlines?country=us&apiKey=${FALLBACK_API_KEY}`);
-        
-        if (data && data.articles && data.articles.length > 0) {
-          // Try to find story by ID or index
-          const idNumber = parseInt(id);
-          const articleIndex = !isNaN(idNumber) ? (idNumber % data.articles.length) : 0;
-          const article = data.articles[articleIndex];
-          
-          const story = transformNewsAPIStory(article, parseInt(id));
-          const similarStories = data.articles
-            .filter((_: any, index: number) => index !== articleIndex)
-            .slice(0, 5)
-            .map((article: any, index: number) => 
-              transformNewsAPIStory(article, 100000 + index)
-            );
-          
-          console.log(`Returning NewsAPI story ${story.id} with ${similarStories.length} similar stories`);
-          return { story, similarStories };
-        } else {
-          console.log('NewsAPI returned no articles');
-          throw new Error("No fallback articles found");
-        }
-      } catch (newsApiError) {
-        console.error('NewsAPI fallback also failed:', newsApiError);
-        throw newsApiError; // rethrow to be caught by outer try/catch
+      if (USE_MOCK_DATA_AS_FALLBACK) {
+        console.log(`Using mock data as fallback for story ID: ${id}`);
+        return getMockStoryResult(id);
       }
+      
+      throw apiError; // Re-throw if we're not using mock data as fallback
     }
   } catch (error) {
     console.error('All API attempts failed. Using mock data as last resort.', error);
     
-    console.log(`Returning mock story for ID: ${id}`);
-    return getMockStoryResult(id);
+    if (USE_MOCK_DATA_AS_FALLBACK) {
+      console.log(`Returning mock story for ID: ${id}`);
+      return getMockStoryResult(id);
+    }
+    
+    throw error; // Re-throw if we're not using mock data as fallback
   }
 };
 
@@ -101,14 +71,6 @@ import { getTopStories } from './newsService';
 export const getStoryBySlug = async (slug: string): Promise<NewsStory | undefined> => {
   try {
     console.log(`Looking for story with slug: ${slug}`);
-    
-    // If mock data is enabled, use mock data
-    if (USE_MOCK_DATA) {
-      // For mock data, just use the slug as the ID
-      const mockId = isNaN(parseInt(slug)) ? 200001 : parseInt(slug);
-      const result = await getMockStoryResult(mockId);
-      return result.story;
-    }
     
     // Attempt to parse ID from slug if it's numeric
     if (/^\d+$/.test(slug)) {
@@ -143,10 +105,6 @@ export const getStoryBySlug = async (slug: string): Promise<NewsStory | undefine
 export const getRecommendedStories = async (storyId: number): Promise<NewsStory[]> => {
   try {
     console.log(`Getting recommended stories for ID: ${storyId}`);
-    if (USE_MOCK_DATA) {
-      const result = await getMockStoryResult(storyId.toString());
-      return result.similarStories;
-    }
     const result = await fetchStoryById(storyId.toString());
     return result.similarStories;
   } catch (error) {
