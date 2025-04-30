@@ -1,4 +1,3 @@
-
 import { APIStory, NewsStory } from '@/types/news';
 
 // Transform API response to our app model
@@ -19,50 +18,101 @@ export const transformAPIStory = (apiStory: APIStory): NewsStory => {
   // Ensure we have a valid ID (handle both string and number)
   const id = apiStory.id ? parseInt(apiStory.id.toString()) : Math.floor(Math.random() * 900000) + 100000;
   
-  // Create a cleaner slug from title or ID
-  const title = apiStory.title || 'Untitled';
-  const titleSlug = apiStory.title_slug || title.toLowerCase().replace(/[^\w\s]/gi, '').replace(/\s+/g, '-');
+  // Process title - ensure we never use 'Untitled' as default
+  const title = apiStory.title || `Story #${id}`;
+  
+  // Process slug carefully
+  const titleSlug = apiStory.title_slug || (apiStory.title ? apiStory.title.toLowerCase().replace(/[^\w\s]/gi, '').replace(/\s+/g, '-') : `story-${id}`);
   const slug = titleSlug || `story-${id}`;
   
   // Use the first available description text
-  const summary = apiStory.summary || apiStory.extended_summary || "No summary available";
+  const summary = apiStory.summary || apiStory.extended_summary || `Description for story #${id}`;
   
   // Make sure we have a valid date
   const pubDate = apiStory.published_date || new Date().toISOString();
   
-  // Extract regions/categories with better error handling
-  let regions: string[] = [];
+  // Parse categories
+  let categories: string[] = [];
   if (apiStory.categories) {
     if (typeof apiStory.categories === 'string') {
-      regions = safeJsonParse(apiStory.categories);
+      categories = safeJsonParse(apiStory.categories);
     } else if (Array.isArray(apiStory.categories)) {
-      regions = apiStory.categories;
+      categories = apiStory.categories;
     }
   }
   
-  // Ensure we have a lead image, even if just a placeholder
-  const leadImage = apiStory.image_url ? {
-    url: apiStory.image_url,
-    filename: title || `image-${apiStory.id}`
-  } : undefined;
+  // Parse collections
+  let collections: string[] = [];
+  if (apiStory.collections) {
+    if (typeof apiStory.collections === 'string') {
+      collections = safeJsonParse(apiStory.collections);
+    } else if (Array.isArray(apiStory.collections)) {
+      collections = apiStory.collections;
+    }
+  }
+  
+  // Parse channels
+  let channels: string[] = [];
+  if (apiStory.channels) {
+    if (typeof apiStory.channels === 'string') {
+      channels = safeJsonParse(apiStory.channels);
+    } else if (Array.isArray(apiStory.channels)) {
+      channels = apiStory.channels;
+    }
+  }
+  
+  // Parse keywords
+  let keywords: string[] = [];
+  if (apiStory.keywords) {
+    if (typeof apiStory.keywords === 'string') {
+      keywords = safeJsonParse(apiStory.keywords);
+    } else if (Array.isArray(apiStory.keywords)) {
+      keywords = apiStory.keywords;
+    }
+  }
+  
+  // Process image data
+  let leadImage;
+  if (apiStory.image_url) {
+    leadImage = {
+      url: apiStory.image_url,
+      // Use a better fallback for filename
+      filename: apiStory.title || `Video Source: ${apiStory.provider_url || apiStory.stated_location || 'Unknown'}`
+    };
+  }
+  
+  // Create collection headline from title_date or other fields
+  const collectionHeadline = apiStory.title_date || pubDate.split(' ')[0] || '';
   
   return {
     id: id,
     title: title,
     slug: slug,
     summary: summary,
+    extended_summary: apiStory.extended_summary || summary,
     published_date: pubDate,
     updated_at: pubDate,
     editorial_updated_at: pubDate,
     clearance_mark: apiStory.story_mark_clearance || "LICENSED",
     lead_image: leadImage,
-    regions: regions,
-    stated_location: apiStory.stated_location || "Unknown",
+    regions: categories,
+    stated_location: apiStory.stated_location || (categories.length > 0 ? categories[0] : "Location Unknown"),
     media_url: apiStory.media_url || "",
-    in_trending_collection: false,
-    video_providing_partner: false,
-    collection_headline: '',
+    provider_url: apiStory.provider_url || "",
+    in_trending_collection: collections.length > 0,
+    video_providing_partner: channels.length > 0,
+    collection_headline: collectionHeadline,
     collection_summary_html: '',
+    categories: categories,
+    collections: collections,
+    channels: channels,
+    keywords: keywords,
+    total_downloads: parseInt(apiStory.total_downloads || '0'),
+    total_views: parseInt(apiStory.total_views || '0'),
+    unique_downloads: parseInt(apiStory.unique_downloads || '0'),
+    unique_views: parseInt(apiStory.unique_views || '0'),
+    title_date: apiStory.title_date || '',
+    story_mark_guidance: apiStory.story_mark_guidance || '',
     lead_item: {
       id: id,
       resource_type: 'video',

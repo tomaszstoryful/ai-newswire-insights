@@ -1,4 +1,3 @@
-
 import { NewsStory } from '@/types/news';
 import { fetchData } from '@/utils/apiUtils';
 import { getMockData } from '@/utils/mockDataUtils';
@@ -6,8 +5,11 @@ import { transformAPIStory, parseRawApiData } from '@/utils/transformUtils';
 import { getValidCache, saveToCache } from '@/utils/cacheUtils';
 import { toast } from '@/hooks/use-toast';
 
-// Primary API endpoint - using Storyful API
-export const STORYFUL_API = 'https://newswire-story-recommendation.staging.storyful.com/api/stories';
+// Primary API endpoint - using Storyful API via our proxy to avoid CORS issues
+export const STORYFUL_API = '/api/newswire/stories';
+
+// Original direct API URL (might be used for documentation purposes)
+// export const ORIGINAL_STORYFUL_API = 'https://newswire-story-recommendation.staging.storyful.com/api/stories';
 
 // Flag to determine if we should use mock data as fallback if API fails
 const USE_MOCK_DATA_AS_FALLBACK = true;

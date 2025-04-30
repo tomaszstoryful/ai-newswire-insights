@@ -197,10 +197,12 @@ const StoryDetail = () => {
               <div className="flex flex-wrap items-center text-sm text-newswire-mediumGray gap-4 mb-4">
                 <span>Videos</span>
                 <span className="w-1 h-1 bg-newswire-mediumGray rounded-full"></span>
-                {story?.slug && (
-                  <span>{story.slug.includes('-') ? story.slug.split('-')[0] : story.slug}</span>
+                {story?.categories && story.categories.length > 0 ? (
+                  <span>{story.categories.join(', ')}</span>
+                ) : (
+                  <span>General</span>
                 )}
-                {story?.regions && story.regions.length > 0 && (
+                {story?.regions && story.regions.length > 0 && story.regions[0] !== story?.categories?.[0] && (
                   <>
                     <span className="w-1 h-1 bg-newswire-mediumGray rounded-full"></span>
                     <span>{story.regions[0]}</span>
@@ -209,13 +211,13 @@ const StoryDetail = () => {
               </div>
               
               <h1 className="text-3xl md:text-5xl font-display font-bold leading-tight mb-4">
-                {story?.title}
+                {story?.title || `Story #${story?.id || 'Details'}`}
               </h1>
               
               <div className="flex flex-wrap items-center text-sm text-newswire-mediumGray gap-4 mb-3">
                 <div className="flex items-center">
                   <Calendar size={16} className="mr-1" />
-                  <span>{story && formatDate(story.published_date)}</span>
+                  <span>{story && story.title_date ? story.title_date : formatDate(story.published_date)}</span>
                 </div>
                 <div className="flex items-center">
                   <Clock size={16} className="mr-1" />
@@ -233,13 +235,35 @@ const StoryDetail = () => {
               </div>
               
               <div className="flex gap-3 mb-6">
-                <Button className="bg-newswire-accent hover:bg-newswire-accent/90 flex items-center gap-2">
+                <Button 
+                  className="bg-newswire-accent hover:bg-newswire-accent/90 flex items-center gap-2"
+                  onClick={() => {
+                    if (story?.media_url) {
+                      window.open(story.media_url, '_blank');
+                    } else {
+                      toast({
+                        title: "Video preview unavailable",
+                        description: "This video cannot be previewed at this time.",
+                        variant: "destructive",
+                      });
+                    }
+                  }}
+                >
                   <Play size={16} />
-                  Preview
+                  Preview Video
                 </Button>
-                <Button variant="outline" className="flex items-center gap-2">
+                <Button 
+                  variant="outline" 
+                  className="flex items-center gap-2"
+                  onClick={() => {
+                    toast({
+                      title: "License request sent",
+                      description: `Licensing request for "${story?.title}" has been submitted.`,
+                    });
+                  }}
+                >
                   <Download size={16} />
-                  License Now
+                  License Content
                 </Button>
                 <Button variant="outline" size="sm" className="text-xs">
                   <Share2 size={14} className="mr-1" />
@@ -267,9 +291,15 @@ const StoryDetail = () => {
                       <Play size={40} className="text-newswire-accent ml-1" />
                     </div>
                   </div>
-                  <div className="text-sm text-newswire-mediumGray mt-2">
-                    <span className="italic">Video credit: {story.lead_image.filename}</span>
-                  </div>
+                  {story.lead_image.filename && (
+                    <div className="text-sm text-newswire-mediumGray mt-2">
+                      <span className="italic">
+                        {story.lead_image.filename.startsWith('Video Source:') 
+                          ? story.lead_image.filename 
+                          : `Video credit: ${story.lead_image.filename}`}
+                      </span>
+                    </div>
+                  )}
                 </div>
               )}
               
@@ -280,6 +310,17 @@ const StoryDetail = () => {
                     {paragraph}
                   </p>
                 ))}
+                
+                {story?.extended_summary && story.extended_summary !== story.summary && (
+                  <>
+                    <h3 className="text-xl font-semibold mb-2 mt-6">Extended Description</h3>
+                    {story.extended_summary.split('\n\n').map((paragraph, index) => (
+                      <p key={index} className="mb-4 text-lg leading-relaxed">
+                        {paragraph}
+                      </p>
+                    ))}
+                  </>
+                )}
               </div>
               
               <Card className="mt-8 mb-6">
@@ -307,6 +348,15 @@ const StoryDetail = () => {
                         <p className="text-sm text-newswire-mediumGray">{story && formatDate(story.published_date)}</p>
                       </div>
                     </div>
+                    {story?.title_date && (
+                      <div className="flex items-start">
+                        <Calendar size={18} className="mr-2 text-newswire-mediumGray mt-0.5" />
+                        <div>
+                          <p className="text-sm font-medium">Title Date</p>
+                          <p className="text-sm text-newswire-mediumGray">{story.title_date}</p>
+                        </div>
+                      </div>
+                    )}
                     <div className="flex items-start">
                       <Clock size={18} className="mr-2 text-newswire-mediumGray mt-0.5" />
                       <div>
@@ -314,42 +364,96 @@ const StoryDetail = () => {
                         <p className="text-sm text-newswire-mediumGray">{story && formatDate(story.updated_at)}</p>
                       </div>
                     </div>
-                    {story?.regions && (
+                    {story?.stated_location && (
                       <div className="flex items-start">
-                        <Globe size={18} className="mr-2 text-newswire-mediumGray mt-0.5" />
+                        <MapPin size={18} className="mr-2 text-newswire-mediumGray mt-0.5" />
                         <div>
-                          <p className="text-sm font-medium">Regions</p>
-                          <p className="text-sm text-newswire-mediumGray">{story.regions.join(', ')}</p>
+                          <p className="text-sm font-medium">Location</p>
+                          <p className="text-sm text-newswire-mediumGray">{story.stated_location}</p>
                         </div>
                       </div>
                     )}
-                    {story?.lead_item && (
-                      <div className="flex items-start">
-                        <Video size={18} className="mr-2 text-newswire-mediumGray mt-0.5" />
-                        <div>
-                          <p className="text-sm font-medium">Resource Type</p>
-                          <p className="text-sm text-newswire-mediumGray">{story.lead_item.resource_type}</p>
-                        </div>
-                      </div>
-                    )}
-                    {story?.collection_headline && (
+                    {story?.categories && story.categories.length > 0 && (
                       <div className="flex items-start">
                         <FileText size={18} className="mr-2 text-newswire-mediumGray mt-0.5" />
                         <div>
-                          <p className="text-sm font-medium">Collection Date</p>
-                          <p className="text-sm text-newswire-mediumGray">{story.collection_headline}</p>
+                          <p className="text-sm font-medium">Categories</p>
+                          <p className="text-sm text-newswire-mediumGray">{story.categories.join(', ')}</p>
                         </div>
                       </div>
                     )}
-                    <div className="flex items-start">
-                      <Video size={18} className="mr-2 text-newswire-mediumGray mt-0.5" />
-                      <div>
-                        <p className="text-sm font-medium">Video Providing Partner</p>
-                        <p className="text-sm text-newswire-mediumGray">{story?.video_providing_partner ? 'Yes' : 'No'}</p>
+                    {story?.collections && story.collections.length > 0 && (
+                      <div className="flex items-start">
+                        <FileText size={18} className="mr-2 text-newswire-mediumGray mt-0.5" />
+                        <div>
+                          <p className="text-sm font-medium">Collections</p>
+                          <p className="text-sm text-newswire-mediumGray">{story.collections.join(', ')}</p>
+                        </div>
                       </div>
-                    </div>
+                    )}
+                    {story?.channels && story.channels.length > 0 && (
+                      <div className="flex items-start">
+                        <FileText size={18} className="mr-2 text-newswire-mediumGray mt-0.5" />
+                        <div>
+                          <p className="text-sm font-medium">Channels</p>
+                          <p className="text-sm text-newswire-mediumGray">{story.channels.join(', ')}</p>
+                        </div>
+                      </div>
+                    )}
+                    {story?.keywords && story.keywords.length > 0 && (
+                      <div className="flex items-start">
+                        <FileText size={18} className="mr-2 text-newswire-mediumGray mt-0.5" />
+                        <div>
+                          <p className="text-sm font-medium">Keywords</p>
+                          <p className="text-sm text-newswire-mediumGray">{story.keywords.join(', ')}</p>
+                        </div>
+                      </div>
+                    )}
+                    {story?.total_views !== undefined && (
+                      <div className="flex items-start">
+                        <FileText size={18} className="mr-2 text-newswire-mediumGray mt-0.5" />
+                        <div>
+                          <p className="text-sm font-medium">Total Views</p>
+                          <p className="text-sm text-newswire-mediumGray">{story.total_views}</p>
+                        </div>
+                      </div>
+                    )}
+                    {story?.provider_url && (
+                      <div className="flex items-start">
+                        <Globe size={18} className="mr-2 text-newswire-mediumGray mt-0.5" />
+                        <div>
+                          <p className="text-sm font-medium">Source URL</p>
+                          <p className="text-sm text-newswire-mediumGray">
+                            <a href={story.provider_url} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline">
+                              {story.provider_url.slice(0, 35)}{story.provider_url.length > 35 ? '...' : ''}
+                            </a>
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    {story?.media_url && (
+                      <div className="flex items-start">
+                        <Video size={18} className="mr-2 text-newswire-mediumGray mt-0.5" />
+                        <div>
+                          <p className="text-sm font-medium">Media URL</p>
+                          <p className="text-sm text-newswire-mediumGray">
+                            <a href={story.media_url} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline">
+                              View Original Media
+                            </a>
+                          </p>
+                        </div>
+                      </div>
+                    )}
                     <div className="col-span-2 mt-4">
-                      <Button className="w-full bg-newswire-accent hover:bg-newswire-accent/90">
+                      <Button 
+                        className="w-full bg-newswire-accent hover:bg-newswire-accent/90"
+                        onClick={() => {
+                          toast({
+                            title: "License request sent",
+                            description: `Licensing request for "${story?.title}" has been submitted.`,
+                          });
+                        }}
+                      >
                         <Download className="mr-2" size={16} />
                         License This Video
                       </Button>

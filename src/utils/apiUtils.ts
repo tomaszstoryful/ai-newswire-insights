@@ -1,4 +1,3 @@
-
 // Handle API request utilities
 
 // Add cache buster to URL to prevent caching
@@ -177,4 +176,32 @@ export const fetchData = async <T>(endpoint: string, params?: string): Promise<T
   
   console.error('All fetch strategies failed for:', targetUrl);
   throw new Error(`Failed to fetch data after all attempts: ${lastError?.message || 'Unknown error'}`);
+};
+
+// Type definition for story data
+export interface Story {
+  id: string;
+  title: string;
+  description?: string;
+  publishedAt?: string;
+  url?: string;
+  // Add other fields as needed based on the API response
+}
+
+// Function to fetch stories from the newswire API
+export const fetchStories = async (): Promise<Story[]> => {
+  try {
+    // Use our Vite proxy endpoint to avoid CORS issues
+    const response = await fetch('/api/newswire/stories');
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status} ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    return data as Story[];
+  } catch (error) {
+    console.error('Error fetching stories:', error);
+    throw error;
+  }
 };

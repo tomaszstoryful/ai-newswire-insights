@@ -1,11 +1,10 @@
-
 import { NewsStory } from '@/types/news';
 import { fetchData } from '@/utils/apiUtils';
 import { getMockData, getMockStoryResult } from '@/utils/mockDataUtils';
 import { transformAPIStory, parseRawApiData } from '@/utils/transformUtils';
 
-// Primary API endpoint - using Storyful API
-const STORYFUL_API = 'https://newswire-story-recommendation.staging.storyful.com/api/stories';
+// Primary API endpoint using our Vite proxy to avoid CORS issues
+const STORYFUL_API = '/api/newswire/stories';
 
 // Flag to determine if we should use mock data as fallback if API fails
 const USE_MOCK_DATA_AS_FALLBACK = true;
@@ -15,8 +14,38 @@ export const fetchStoryById = async (id: string): Promise<{ story: NewsStory; si
     console.log(`Fetching story with ID: ${id}`);
     
     try {
-      // Try using the Storyful API directly to get a story
-      console.log(`Attempting to fetch single story from Storyful API`);
+      // Try fetching the specific story by ID using our proxy
+      console.log(`Attempting to fetch single story with ID: ${id}`);
+      const singleStoryEndpoint = `${STORYFUL_API}/${id}`;
+      
+      try {
+        // First attempt: Try to fetch the specific story directly
+        const storyData = await fetchData<any>(singleStoryEndpoint);
+        console.log('Single story data received:', storyData);
+        
+        if (storyData) {
+          // Transform the story to our format
+          const transformedStory = transformAPIStory(storyData);
+          
+          // Fetch some stories for the "similar stories" section
+          const allStoriesData = await fetchData<any>(STORYFUL_API);
+          const allStories = parseRawApiData(allStoriesData);
+          
+          // Get a few similar stories
+          const similarStories = allStories
+            .filter(s => s.id !== id && s.id?.toString() !== id.toString())
+            .slice(0, 5)
+            .map(transformAPIStory);
+          
+          console.log(`Returning single story ID: ${transformedStory.id} with ${similarStories.length} similar stories`);
+          return { story: transformedStory, similarStories };
+        }
+      } catch (singleStoryError) {
+        console.log('Failed to fetch single story directly, falling back to all stories method:', singleStoryError);
+      }
+      
+      // Second attempt: Fallback to fetching all stories and filtering
+      console.log('Falling back to fetching all stories and filtering');
       const rawData = await fetchData<any>(STORYFUL_API);
       console.log('Raw Storyful data received:', typeof rawData);
       

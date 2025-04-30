@@ -8,6 +8,13 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    proxy: {
+      '/api/newswire': {
+        target: 'https://newswire-story-recommendation.staging.storyful.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/newswire/, '/api'),
+      }
+    },
   },
   plugins: [
     react(),
