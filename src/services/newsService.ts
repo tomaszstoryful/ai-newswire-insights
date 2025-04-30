@@ -13,7 +13,7 @@ export const FALLBACK_API = 'https://newsapi.org/v2';
 export const FALLBACK_API_KEY = '1e1c1fbb85be4bb3a635f8e83d87791e';
 
 // Flag to determine if we should use mock data by default (due to known API limitations)
-const USE_MOCK_DATA = true; // Set to true since we know the APIs have CORS issues
+const USE_MOCK_DATA = false; // Changed from true to false to disable mock data
 
 export const getTopStories = async (forceRefresh: boolean = false): Promise<NewsStory[]> => {
   try {
@@ -102,7 +102,7 @@ export const getTopStories = async (forceRefresh: boolean = false): Promise<News
       }
     }
   } catch (error) {
-    console.error('All API attempts failed. Using mock data:', error);
+    console.error('All API attempts failed. Using mock data as last resort:', error);
     
     // Return mock data as a last resort
     const mockStories = Array.from({ length: 10 }, (_, i) => getMockData(200000 + i));

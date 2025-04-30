@@ -12,7 +12,7 @@ const FALLBACK_API = 'https://newsapi.org/v2';
 const FALLBACK_API_KEY = '1e1c1fbb85be4bb3a635f8e83d87791e';
 
 // Flag to determine if we should use mock data by default
-const USE_MOCK_DATA = true; // Set to true since we know the APIs have CORS issues
+const USE_MOCK_DATA = false; // Changed from true to false to disable mock data
 
 export const fetchStoryById = async (id: string): Promise<{ story: NewsStory; similarStories: NewsStory[] }> => {
   try {
