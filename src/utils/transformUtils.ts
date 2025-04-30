@@ -20,8 +20,9 @@ export const transformAPIStory = (apiStory: APIStory): NewsStory => {
   const id = apiStory.id ? parseInt(apiStory.id) : Math.floor(Math.random() * 900000) + 100000;
   
   // Create a cleaner slug from title or ID
-  const slug = apiStory.title_slug || 
-               (apiStory.title ? apiStory.title.toLowerCase().replace(/[^\w\s]/gi, '').replace(/\s+/g, '-') : `story-${id}`);
+  const title = apiStory.title || 'Untitled';
+  const titleSlug = apiStory.title_slug || title.toLowerCase().replace(/[^\w\s]/gi, '').replace(/\s+/g, '-');
+  const slug = titleSlug || `story-${id}`;
   
   // Use the first available description text
   const summary = apiStory.summary || apiStory.extended_summary || "No summary available";
@@ -29,9 +30,12 @@ export const transformAPIStory = (apiStory: APIStory): NewsStory => {
   // Make sure we have a valid date
   const pubDate = apiStory.published_date || new Date().toISOString();
   
+  // Extract regions/categories
+  const regions = apiStory.categories ? safeJsonParse(apiStory.categories) : [];
+  
   return {
     id: id,
-    title: apiStory.title || 'Untitled',
+    title: title,
     slug: slug,
     summary: summary,
     published_date: pubDate,
@@ -40,9 +44,9 @@ export const transformAPIStory = (apiStory: APIStory): NewsStory => {
     clearance_mark: apiStory.story_mark_clearance || "LICENSED",
     lead_image: apiStory.image_url ? {
       url: apiStory.image_url,
-      filename: apiStory.title || `image-${apiStory.id}`
+      filename: title || `image-${apiStory.id}`
     } : undefined,
-    regions: apiStory.categories ? safeJsonParse(apiStory.categories) : [],
+    regions: regions,
     stated_location: apiStory.stated_location || "Unknown",
     media_url: apiStory.media_url || "",
     in_trending_collection: false,
@@ -101,6 +105,19 @@ export const transformNewsAPIStory = (article: any, id: number): NewsStory => {
 
 // Helper function to parse raw API data - this handles malformed or unusual formats
 export const parseRawApiData = (data: any): APIStory[] => {
+  console.log('Parsing raw API data, type:', typeof data);
+  
+  // If data is a string (happens with some proxies), try to parse it
+  if (typeof data === 'string') {
+    try {
+      data = JSON.parse(data);
+      console.log('Successfully parsed string data to object');
+    } catch (e) {
+      console.error('Failed to parse string data:', data.substring(0, 100));
+      return [];
+    }
+  }
+  
   // If data is already an array, use it directly
   if (Array.isArray(data)) {
     console.log(`API returned an array with ${data.length} items`);

@@ -47,32 +47,14 @@ export const toJson = async (response: Response) => {
   }
 };
 
-// List of fetch strategies to try in order
+// Enhanced list of fetch strategies with more proxy options
 const fetchStrategies = [
-  // Direct fetch with enhanced headers
-  async (url: string) => {
-    console.log('Trying direct fetch with enhanced headers');
-    return fetch(url, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache',
-        'X-Requested-With': 'XMLHttpRequest',
-      },
-      mode: 'cors',
-      credentials: 'omit',
-    });
-  },
-  
-  // Direct fetch with minimal headers 
+  // Direct fetch with minimal headers to reduce CORS issues
   async (url: string) => {
     console.log('Trying direct fetch with minimal headers');
     return fetch(url, {
       method: 'GET',
       mode: 'cors',
-      credentials: 'omit',
     });
   },
   
@@ -82,7 +64,6 @@ const fetchStrategies = [
     return fetch(url, {
       method: 'GET',
       mode: 'no-cors',
-      credentials: 'omit',
     });
   },
   
@@ -97,6 +78,20 @@ const fetchStrategies = [
   async (url: string) => {
     const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
     console.log('Trying corsproxy.io proxy:', proxyUrl);
+    return fetch(proxyUrl);
+  },
+  
+  // Using cors-anywhere
+  async (url: string) => {
+    const proxyUrl = `https://cors-anywhere.herokuapp.com/${url}`;
+    console.log('Trying cors-anywhere proxy (requires temporary access):', proxyUrl);
+    return fetch(proxyUrl);
+  },
+  
+  // Using thingproxy
+  async (url: string) => {
+    const proxyUrl = `https://thingproxy.freeboard.io/fetch/${url}`;
+    console.log('Trying thingproxy proxy:', proxyUrl);
     return fetch(proxyUrl);
   }
 ];
@@ -116,7 +111,7 @@ export const fetchData = async <T>(endpoint: string, params?: string): Promise<T
     try {
       // Add a timeout for each fetch attempt
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000); // 8-second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10-second timeout
       
       const strategy = fetchStrategies[i];
       const response = await strategy(urlWithCache);
@@ -124,7 +119,7 @@ export const fetchData = async <T>(endpoint: string, params?: string): Promise<T
       clearTimeout(timeoutId); // Clear the timeout
       
       // For no-cors mode, we can't check status or parse JSON, so just return empty array
-      if (i === 2) { // Index of the no-cors strategy
+      if (i === 1) { // Index of the no-cors strategy
         console.log('No-cors mode fetch completed, but response content is opaque');
         return [] as unknown as T;
       }

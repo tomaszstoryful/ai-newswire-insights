@@ -21,6 +21,7 @@ export const getTopStories = async (forceRefresh: boolean = false): Promise<News
     if (!forceRefresh) {
       const cachedStories = getValidCache();
       if (cachedStories) {
+        console.log('Using cached stories:', cachedStories.length);
         return cachedStories;
       }
     } else {
@@ -33,7 +34,10 @@ export const getTopStories = async (forceRefresh: boolean = false): Promise<News
       // Try using the Storyful API first
       console.log(`Fetching from: ${STORYFUL_API}`);
       const rawData = await fetchData<any>(STORYFUL_API);
+      console.log('Raw Storyful data received:', typeof rawData, Array.isArray(rawData));
+      
       const storyfulData = parseRawApiData(rawData);
+      console.log('Parsed Storyful data count:', storyfulData?.length || 0);
       
       if (storyfulData && storyfulData.length > 0) {
         console.log('Storyful API returned stories:', storyfulData.length);
@@ -60,34 +64,39 @@ export const getTopStories = async (forceRefresh: boolean = false): Promise<News
       console.error('Storyful API failed. Trying NewsAPI as fallback:', storyfulError);
       
       // Try NewsAPI as fallback
-      console.log(`Fetching from fallback: ${FALLBACK_API}/top-headlines`);
-      const newsApiData = await fetchData<any>(`${FALLBACK_API}/top-headlines?country=us&apiKey=${FALLBACK_API_KEY}`);
-      
-      if (newsApiData && newsApiData.articles && Array.isArray(newsApiData.articles)) {
-        console.log('NewsAPI returned stories:', newsApiData.articles.length);
+      try {
+        console.log(`Fetching from fallback: ${FALLBACK_API}/top-headlines`);
+        const newsApiData = await fetchData<any>(`${FALLBACK_API}/top-headlines?country=us&apiKey=${FALLBACK_API_KEY}`);
         
-        if (newsApiData.articles.length === 0) {
-          throw new Error('NewsAPI returned empty articles array');
+        if (newsApiData && newsApiData.articles && Array.isArray(newsApiData.articles)) {
+          console.log('NewsAPI returned stories:', newsApiData.articles.length);
+          
+          if (newsApiData.articles.length === 0) {
+            throw new Error('NewsAPI returned empty articles array');
+          }
+          
+          // Transform the articles to our NewsStory format
+          const stories = newsApiData.articles.map((article: any, index: number) => 
+            transformNewsAPIStory(article, 200000 + index)
+          );
+          
+          console.log('Transformed stories from NewsAPI:', stories.length);
+          
+          // Cache the result
+          saveToCache(stories);
+          
+          toast({
+            title: "Stories updated (fallback)",
+            description: `Using NewsAPI fallback. Loaded ${stories.length} stories.`,
+          });
+          
+          return stories;
+        } else {
+          throw new Error("NewsAPI returned invalid response");
         }
-        
-        // Transform the articles to our NewsStory format
-        const stories = newsApiData.articles.map((article: any, index: number) => 
-          transformNewsAPIStory(article, 200000 + index)
-        );
-        
-        console.log('Transformed stories from NewsAPI:', stories.length);
-        
-        // Cache the result
-        saveToCache(stories);
-        
-        toast({
-          title: "Stories updated (fallback)",
-          description: `Using NewsAPI fallback. Loaded ${stories.length} stories.`,
-        });
-        
-        return stories;
-      } else {
-        throw new Error("All API endpoints failed");
+      } catch (newsApiError) {
+        console.error('NewsAPI fallback also failed:', newsApiError);
+        throw newsApiError; // rethrow to be caught by outer try/catch
       }
     }
   } catch (error) {
