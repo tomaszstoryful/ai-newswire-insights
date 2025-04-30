@@ -12,7 +12,8 @@ const FALLBACK_API = 'https://newsapi.org/v2';
 const FALLBACK_API_KEY = '1e1c1fbb85be4bb3a635f8e83d87791e';
 
 // Flag to determine if we should use mock data by default
-const USE_MOCK_DATA = false; // Changed from true to false to disable mock data
+// Using true here because NewsAPI doesn't allow browser requests except from localhost
+const USE_MOCK_DATA = true; // API has CORS restrictions that prevent browser requests
 
 export const fetchStoryById = async (id: string): Promise<{ story: NewsStory; similarStories: NewsStory[] }> => {
   try {
@@ -20,7 +21,7 @@ export const fetchStoryById = async (id: string): Promise<{ story: NewsStory; si
     
     // If mock data mode is enabled, immediately return mock data
     if (USE_MOCK_DATA) {
-      console.log(`Using mock data for story ID: ${id} (APIs disabled)`);
+      console.log(`Using mock data for story ID: ${id} (API has browser restrictions)`);
       return getMockStoryResult(id);
     }
     
