@@ -18,7 +18,8 @@ export const transformAPIStory = (apiStory: APIStory): NewsStory => {
   // Ensure we have a valid ID (handle both string and number)
   const id = apiStory.id ? parseInt(apiStory.id.toString()) : Math.floor(Math.random() * 900000) + 100000;
   
-  // Process title - ensure we never use 'Untitled' as default
+  // Process title - ensure we use a real title when available
+  // The API response has a real title, so we should use it rather than a fallback
   const title = apiStory.title || `Story #${id}`;
   
   // Process slug carefully
@@ -71,11 +72,16 @@ export const transformAPIStory = (apiStory: APIStory): NewsStory => {
     }
   }
   
-  // Process image data
+  // Process image data - carefully handle different image URL formats
   let leadImage;
   if (apiStory.image_url) {
+    // Ensure we have a real URL, not just a placeholder
+    const imageUrl = apiStory.image_url.includes('@webp') ? 
+      apiStory.image_url :  // Use as is if it already has @webp format
+      `${apiStory.image_url}@webp`; // Add @webp if missing
+    
     leadImage = {
-      url: apiStory.image_url,
+      url: imageUrl,
       // Use a better fallback for filename
       filename: apiStory.title || `Video Source: ${apiStory.provider_url || apiStory.stated_location || 'Unknown'}`
     };
@@ -147,6 +153,12 @@ export const parseRawApiData = (data: any): APIStory[] => {
     }
   }
   
+  // If response has a story and similar_stories structure
+  if (data && data.story) {
+    console.log('Found APIStoryResponse structure with main story and similar stories');
+    return [data.story, ...(data.similar_stories || [])];
+  }
+  
   // If data is already an array, use it directly
   if (Array.isArray(data)) {
     console.log(`API returned an array with ${data.length} items`);
@@ -171,7 +183,7 @@ export const parseRawApiData = (data: any): APIStory[] => {
       return data.results;
     }
     
-    // If it's a simple object, wrap it in an array
+    // If it's a simple object with story properties, wrap it in an array
     if (data.id || data.title) {
       console.log('API returned a single story object');
       return [data];

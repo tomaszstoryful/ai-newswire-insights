@@ -1,4 +1,4 @@
-import { NewsStory } from '@/types/news';
+import { NewsStory, APIStoryResponse } from '@/types/news';
 import { fetchData } from '@/utils/apiUtils';
 import { getMockData, getMockStoryResult } from '@/utils/mockDataUtils';
 import { transformAPIStory, parseRawApiData } from '@/utils/transformUtils';
@@ -20,24 +20,38 @@ export const fetchStoryById = async (id: string): Promise<{ story: NewsStory; si
       
       try {
         // First attempt: Try to fetch the specific story directly
-        const storyData = await fetchData<any>(singleStoryEndpoint);
-        console.log('Single story data received:', storyData);
+        const response = await fetchData<any>(singleStoryEndpoint);
+        console.log('Single story data received:', response);
         
-        if (storyData) {
-          // Transform the story to our format
-          const transformedStory = transformAPIStory(storyData);
+        // Check if the response has the expected structure with story and similar_stories
+        if (response && response.story) {
+          console.log('Found story in response:', response.story.id || 'unknown id');
           
-          // Fetch some stories for the "similar stories" section
+          // Transform the story to our format
+          const transformedStory = transformAPIStory(response.story);
+          console.log('Transformed story:', transformedStory.id, transformedStory.title);
+          
+          // Transform similar stories if available
+          let similarStories: NewsStory[] = [];
+          if (response.similar_stories && Array.isArray(response.similar_stories)) {
+            similarStories = response.similar_stories.map(transformAPIStory);
+            console.log(`Found ${similarStories.length} similar stories`);
+          }
+          
+          return { story: transformedStory, similarStories };
+        } else if (response && typeof response === 'object') {
+          // If the response is a single story object without the wrapper
+          console.log('Response appears to be a direct story object');
+          const transformedStory = transformAPIStory(response);
+          
+          // Fetch similar stories separately
           const allStoriesData = await fetchData<any>(STORYFUL_API);
           const allStories = parseRawApiData(allStoriesData);
-          
-          // Get a few similar stories
           const similarStories = allStories
             .filter(s => s.id !== id && s.id?.toString() !== id.toString())
             .slice(0, 5)
             .map(transformAPIStory);
           
-          console.log(`Returning single story ID: ${transformedStory.id} with ${similarStories.length} similar stories`);
           return { story: transformedStory, similarStories };
         }
       } catch (singleStoryError) {

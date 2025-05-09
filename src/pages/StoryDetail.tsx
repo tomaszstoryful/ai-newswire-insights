@@ -281,15 +281,33 @@ const StoryDetail = () => {
                     src={story.lead_image.url} 
                     alt={story.title} 
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                      // If image fails to load, replace with a placeholder
+                      console.error('Image failed to load:', story.lead_image?.url);
+                      e.currentTarget.src = 'https://via.placeholder.com/800x450?text=Video+Preview';
+                    }}
                   />
                   <div className="absolute bottom-3 right-3 bg-black/70 text-white text-xs px-2 py-1 rounded-md flex items-center">
                     <Clock size={12} className="mr-1" />
                     {durationString}
                   </div>
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-20 h-20 rounded-full bg-white/90 flex items-center justify-center cursor-pointer hover:bg-white transition-colors">
+                    <button 
+                      className="w-20 h-20 rounded-full bg-white/90 flex items-center justify-center cursor-pointer hover:bg-white transition-colors"
+                      onClick={() => {
+                        if (story.media_url) {
+                          window.open(story.media_url, '_blank');
+                        } else {
+                          toast({
+                            title: "Video preview unavailable",
+                            description: "This video cannot be previewed at this time.",
+                            variant: "destructive",
+                          });
+                        }
+                      }}
+                    >
                       <Play size={40} className="text-newswire-accent ml-1" />
-                    </div>
+                    </button>
                   </div>
                   {story.lead_image.filename && (
                     <div className="text-sm text-newswire-mediumGray mt-2">
@@ -303,13 +321,32 @@ const StoryDetail = () => {
                 </div>
               )}
               
+              {!story?.lead_image && (
+                <div className="relative aspect-video w-full overflow-hidden mb-6 bg-newswire-lightGray rounded-lg shadow-md flex items-center justify-center">
+                  <div className="text-newswire-mediumGray">
+                    <Video size={48} className="mx-auto mb-2 opacity-30" />
+                    <p>Video preview not available</p>
+                  </div>
+                  <div className="absolute bottom-3 right-3 bg-black/70 text-white text-xs px-2 py-1 rounded-md flex items-center">
+                    <Clock size={12} className="mr-1" />
+                    {durationString}
+                  </div>
+                </div>
+              )}
+              
               <div className="prose max-w-none">
                 <h3 className="text-xl font-semibold mb-2">Video Description</h3>
-                {story?.summary.split('\n\n').map((paragraph, index) => (
+                {story?.summary && story.summary.split('\n\n').map((paragraph, index) => (
                   <p key={index} className="mb-4 text-lg leading-relaxed">
                     {paragraph}
                   </p>
                 ))}
+                
+                {!story?.summary && (
+                  <p className="mb-4 text-lg leading-relaxed text-newswire-mediumGray italic">
+                    No description available for this video.
+                  </p>
+                )}
                 
                 {story?.extended_summary && story.extended_summary !== story.summary && (
                   <>
