@@ -11,7 +11,7 @@ const isDevelopment = import.meta.env.DEV;
 // API endpoint configuration
 export const STORYFUL_API = isDevelopment
   ? '/api/newswire/stories' // Development (proxy through Vite)
-  : 'https://newswire-story-recommendation.staging.storyful.com/api/stories'; // Production (direct URL)
+  : '/api/storyfulProxy/stories'; // Production (Vercel proxy)
 
 // Original direct API URL (for reference if needed later)
 // export const ORIGINAL_STORYFUL_API = 'https://newswire-story-recommendation.staging.storyful.com/api/stories';

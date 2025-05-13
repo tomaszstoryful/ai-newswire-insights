@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/storyfulProxy/:path*",
+      "destination": "https://newswire-story-recommendation.staging.storyful.com/api/:path*"
+    }
+  ]
+} 

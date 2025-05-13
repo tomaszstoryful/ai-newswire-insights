@@ -9,7 +9,7 @@ const isDevelopment = import.meta.env.DEV;
 // API endpoint configuration
 const STORYFUL_API = isDevelopment
   ? '/api/newswire/stories' // Development (proxy through Vite)
-  : 'https://newswire-story-recommendation.staging.storyful.com/api/stories'; // Production (direct URL)
+  : '/api/storyfulProxy/stories'; // Production (Vercel proxy)
 
 // Flag to determine if we should use mock data as fallback if API fails
 const USE_MOCK_DATA_AS_FALLBACK = true;
