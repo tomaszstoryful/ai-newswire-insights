@@ -5,10 +5,15 @@ import { transformAPIStory, parseRawApiData } from '@/utils/transformUtils';
 import { getValidCache, saveToCache } from '@/utils/cacheUtils';
 import { toast } from '@/hooks/use-toast';
 
-// Primary API endpoint - using Storyful API via our proxy to avoid CORS issues
-export const STORYFUL_API = '/api/newswire/stories';
+// Determine if running in development or production
+const isDevelopment = import.meta.env.DEV;
 
-// Original direct API URL (might be used for documentation purposes)
+// API endpoint configuration
+export const STORYFUL_API = isDevelopment
+  ? '/api/newswire/stories' // Development (proxy through Vite)
+  : 'https://newswire-story-recommendation.staging.storyful.com/api/stories'; // Production (direct URL)
+
+// Original direct API URL (for reference if needed later)
 // export const ORIGINAL_STORYFUL_API = 'https://newswire-story-recommendation.staging.storyful.com/api/stories';
 
 // Flag to determine if we should use mock data as fallback if API fails

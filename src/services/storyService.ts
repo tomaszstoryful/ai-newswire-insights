@@ -3,8 +3,13 @@ import { fetchData } from '@/utils/apiUtils';
 import { getMockData, getMockStoryResult } from '@/utils/mockDataUtils';
 import { transformAPIStory, parseRawApiData } from '@/utils/transformUtils';
 
-// Primary API endpoint using our Vite proxy to avoid CORS issues
-const STORYFUL_API = '/api/newswire/stories';
+// Determine if running in development or production
+const isDevelopment = import.meta.env.DEV;
+
+// API endpoint configuration
+const STORYFUL_API = isDevelopment
+  ? '/api/newswire/stories' // Development (proxy through Vite)
+  : 'https://newswire-story-recommendation.staging.storyful.com/api/stories'; // Production (direct URL)
 
 // Flag to determine if we should use mock data as fallback if API fails
 const USE_MOCK_DATA_AS_FALLBACK = true;
